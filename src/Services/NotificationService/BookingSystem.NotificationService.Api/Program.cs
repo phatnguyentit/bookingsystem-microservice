@@ -14,8 +14,8 @@ builder.AddRedisDistributedCache("redis");
 builder.Services.AddKafkaSettings(builder.Configuration);
 builder.Services.AddScoped<INotificationSender, EmailNotificationSender>();
 
-// Register Kafka consumers as hosted services
 builder.Services.AddHostedService<BookingCreatedKafkaConsumer>();
+builder.Services.AddHostedService<BookingCancelledKafkaConsumer>();
 builder.Services.AddHostedService<PaymentSucceededKafkaConsumer>();
 builder.Services.AddHostedService<PaymentFailedKafkaConsumer>();
 

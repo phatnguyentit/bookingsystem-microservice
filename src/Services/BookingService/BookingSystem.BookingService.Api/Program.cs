@@ -1,3 +1,4 @@
+using BookingSystem.BookingService.Api.Consumers;
 using BookingSystem.BookingService.Api.Endpoints;
 using BookingSystem.Shared.Persistence;
 using BookingSystem.BookingService.Application.Commands.CreateBooking;
@@ -34,6 +35,8 @@ builder.Services.AddHttpClient<IUserServiceClient, UserServiceClient>(
     c => c.BaseAddress = new Uri("http://user-service"));
 
 builder.Services.AddKafkaMessaging(builder.Configuration);
+builder.Services.AddHostedService<PaymentSucceededKafkaConsumer>();
+builder.Services.AddHostedService<PaymentFailedKafkaConsumer>();
 
 var app = builder.Build();
 
