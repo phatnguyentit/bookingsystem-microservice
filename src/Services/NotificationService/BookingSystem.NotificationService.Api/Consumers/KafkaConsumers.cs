@@ -1,23 +1,24 @@
 using BookingSystem.NotificationService.Infrastructure.Services;
 using BookingSystem.Shared.Contracts.Events;
+using BookingSystem.Shared.Messaging;
 using Confluent.Kafka;
+using Microsoft.Extensions.Options;
 using System.Text.Json;
 
 namespace BookingSystem.NotificationService.Api.Consumers;
 
 public abstract class KafkaConsumerBase<T>(
     string topic,
-    IConfiguration configuration,
+    IOptions<KafkaServerSettings> kafkaSettings,
     ILogger logger) : BackgroundService where T : class
 {
     protected abstract Task ProcessAsync(T message, CancellationToken cancellationToken);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var bootstrapServers = configuration["Kafka:BootstrapServers"] ?? "localhost:9092";
         var config = new ConsumerConfig
         {
-            BootstrapServers = bootstrapServers,
+            BootstrapServers = kafkaSettings.Value.BootstrapServers,
             GroupId = $"notification-service-{topic}",
             AutoOffsetReset = AutoOffsetReset.Earliest,
             EnableAutoCommit = false
@@ -55,11 +56,11 @@ public abstract class KafkaConsumerBase<T>(
 }
 
 public class BookingCreatedKafkaConsumer(
-    IConfiguration configuration,
+    IOptions<KafkaServerSettings> kafkaSettings,
     ILogger<BookingCreatedKafkaConsumer> logger,
     IServiceScopeFactory scopeFactory)
     : KafkaConsumerBase<BookingCreatedIntegrationEvent>(
-        "booking.created", configuration, logger)
+        "booking.created", kafkaSettings, logger)
 {
     protected override async Task ProcessAsync(BookingCreatedIntegrationEvent message, CancellationToken cancellationToken)
     {
@@ -72,14 +73,14 @@ public class BookingCreatedKafkaConsumer(
 }
 
 public class PaymentSucceededKafkaConsumer(
-    IConfiguration configuration,
+    IOptions<KafkaServerSettings> kafkaSettings,
     ILogger<PaymentSucceededKafkaConsumer> logger,
     IServiceScopeFactory scopeFactory)
-    : KafkaConsumerBase<BookingSystem.Shared.Contracts.Events.PaymentSucceededIntegrationEvent>(
-        "payment.succeeded", configuration, logger)
+    : KafkaConsumerBase<PaymentSucceededIntegrationEvent>(
+        "payment.succeeded", kafkaSettings, logger)
 {
     protected override async Task ProcessAsync(
-        BookingSystem.Shared.Contracts.Events.PaymentSucceededIntegrationEvent message,
+        PaymentSucceededIntegrationEvent message,
         CancellationToken cancellationToken)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
@@ -91,14 +92,14 @@ public class PaymentSucceededKafkaConsumer(
 }
 
 public class PaymentFailedKafkaConsumer(
-    IConfiguration configuration,
+    IOptions<KafkaServerSettings> kafkaSettings,
     ILogger<PaymentFailedKafkaConsumer> logger,
     IServiceScopeFactory scopeFactory)
-    : KafkaConsumerBase<BookingSystem.Shared.Contracts.Events.PaymentFailedIntegrationEvent>(
-        "payment.failed", configuration, logger)
+    : KafkaConsumerBase<PaymentFailedIntegrationEvent>(
+        "payment.failed", kafkaSettings, logger)
 {
     protected override async Task ProcessAsync(
-        BookingSystem.Shared.Contracts.Events.PaymentFailedIntegrationEvent message,
+        PaymentFailedIntegrationEvent message,
         CancellationToken cancellationToken)
     {
         await using var scope = scopeFactory.CreateAsyncScope();

@@ -18,11 +18,16 @@ public class UnitOfWork(BookingDbContext dbContext) : IUnitOfWork
             .Select(OutboxMessage.From)
             .ToList();
 
-        dbContext.OutboxMessages.AddRange(outboxMessages);
+        if (outboxMessages.Any())
+        {
+            dbContext.OutboxMessages.AddRange(outboxMessages);
+        }
 
         // Clear events now so re-entrant calls don't double-publish.
         foreach (var entry in dbContext.ChangeTracker.Entries<AggregateRoot>())
+        {
             entry.Entity.ClearDomainEvents();
+        }
 
         await dbContext.SaveChangesAsync(cancellationToken);
         // Kafka publishing is handled by OutboxProcessor (background service).

@@ -3,7 +3,7 @@ namespace BookingSystem.Shared.Contracts.DTOs;
 public record BookingDto(
     Guid Id,
     Guid UserId,
-    Guid ListingId,
+    Guid CatalogId,
     DateOnly CheckIn,
     DateOnly CheckOut,
     decimal Amount,

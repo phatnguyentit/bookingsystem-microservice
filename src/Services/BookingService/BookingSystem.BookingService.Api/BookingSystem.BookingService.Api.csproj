@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../../ServiceDefaults/BookingSystem.ServiceDefaults/BookingSystem.ServiceDefaults.csproj" />
+    <ProjectReference Include="../../../Shared/BookingSystem.Shared.Persistence/BookingSystem.Shared.Persistence.csproj" />
     <ProjectReference Include="../BookingSystem.BookingService.Application/BookingSystem.BookingService.Application.csproj" />
     <ProjectReference Include="../BookingSystem.BookingService.Infrastructure/BookingSystem.BookingService.Infrastructure.csproj" />
   </ItemGroup>

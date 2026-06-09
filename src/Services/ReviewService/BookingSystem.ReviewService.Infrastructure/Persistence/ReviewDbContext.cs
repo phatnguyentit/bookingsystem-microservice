@@ -6,7 +6,7 @@ public class Review
 {
     public Guid Id { get; set; }
     public Guid BookingId { get; set; }
-    public Guid ListingId { get; set; }
+    public Guid CatalogId { get; set; }
     public Guid UserId { get; set; }
     public int Rating { get; set; }
     public string Comment { get; set; } = string.Empty;

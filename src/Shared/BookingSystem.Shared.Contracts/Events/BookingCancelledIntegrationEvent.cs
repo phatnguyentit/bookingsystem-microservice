@@ -3,6 +3,6 @@ namespace BookingSystem.Shared.Contracts.Events;
 public record BookingCancelledIntegrationEvent(
     Guid BookingId,
     Guid UserId,
-    Guid ListingId,
+    Guid CatalogId,
     string Reason,
     DateTime OccurredAt);

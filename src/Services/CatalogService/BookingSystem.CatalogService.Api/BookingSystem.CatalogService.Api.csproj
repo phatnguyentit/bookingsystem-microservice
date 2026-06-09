@@ -9,10 +9,15 @@
     <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.3.5" />
     <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" Version="13.3.5" />
     <PackageReference Include="MediatR" Version="12.*" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.*">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="../../../ServiceDefaults/BookingSystem.ServiceDefaults/BookingSystem.ServiceDefaults.csproj" />
+    <ProjectReference Include="../../../Shared/BookingSystem.Shared.Persistence/BookingSystem.Shared.Persistence.csproj" />
     <ProjectReference Include="../BookingSystem.CatalogService.Infrastructure/BookingSystem.CatalogService.Infrastructure.csproj" />
     <ProjectReference Include="../../../Shared/BookingSystem.Shared.Contracts/BookingSystem.Shared.Contracts.csproj" />
   </ItemGroup>

@@ -17,7 +17,7 @@ public class GetBookingHandler(IBookingRepository repo)
         return new BookingDto(
             booking.Id.Value,
             booking.UserId.Value,
-            booking.ListingId.Value,
+            booking.CatalogId.Value,
             booking.Period.CheckIn,
             booking.Period.CheckOut,
             booking.TotalPrice.Amount,

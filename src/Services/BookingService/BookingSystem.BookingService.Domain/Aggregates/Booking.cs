@@ -8,7 +8,7 @@ namespace BookingSystem.BookingService.Domain;
 public class Booking : AggregateRoot<BookingId>
 {
     public UserId UserId { get; private set; } = default!;
-    public ListingId ListingId { get; private set; } = default!;
+    public CatalogId CatalogId { get; private set; } = default!;
     public DateRange Period { get; private set; } = default!;
     public Money TotalPrice { get; private set; } = default!;
     public BookingStatus Status { get; private set; }
@@ -17,7 +17,7 @@ public class Booking : AggregateRoot<BookingId>
 
     public static Booking Create(
         UserId userId,
-        ListingId listingId,
+        CatalogId catalogId,
         DateRange period,
         Money totalPrice)
     {
@@ -25,12 +25,12 @@ public class Booking : AggregateRoot<BookingId>
         {
             Id = BookingId.New(),
             UserId = userId,
-            ListingId = listingId,
+            CatalogId = catalogId,
             Period = period,
             TotalPrice = totalPrice,
             Status = BookingStatus.Pending
         };
-        booking.AddDomainEvent(BookingCreatedEvent.Create(booking.Id, userId, listingId));
+        booking.AddDomainEvent(BookingCreatedEvent.Create(booking.Id, userId, catalogId));
         return booking;
     }
 

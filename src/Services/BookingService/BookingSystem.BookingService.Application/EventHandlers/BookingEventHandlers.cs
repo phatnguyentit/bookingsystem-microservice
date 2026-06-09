@@ -13,7 +13,7 @@ public class PublishBookingCreatedHandler(IEventPublisher publisher)
             new BookingCreatedIntegrationEvent(
                 notification.BookingId.Value,
                 notification.UserId.Value,
-                notification.ListingId.Value,
+                notification.CatalogId.Value,
                 default, // populated in infrastructure via full booking lookup
                 default,
                 0,

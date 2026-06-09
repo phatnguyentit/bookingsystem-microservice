@@ -27,7 +27,7 @@ public sealed class KafkaEventPublisher : IEventPublisher, IDisposable
         };
 
         try
-        {
+        { 
             var result = await _producer.ProduceAsync(topic, message, cancellationToken);
             _logger.LogInformation(
                 "Published {EventType} to topic {Topic} at offset {Offset}",

@@ -8,12 +8,12 @@
   <ItemGroup>
     <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.3.5" />
     <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" Version="13.3.5" />
-    <PackageReference Include="Confluent.Kafka" Version="2.*" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="../../../ServiceDefaults/BookingSystem.ServiceDefaults/BookingSystem.ServiceDefaults.csproj" />
     <ProjectReference Include="../BookingSystem.NotificationService.Infrastructure/BookingSystem.NotificationService.Infrastructure.csproj" />
     <ProjectReference Include="../../../Shared/BookingSystem.Shared.Contracts/BookingSystem.Shared.Contracts.csproj" />
+    <ProjectReference Include="../../../Shared/BookingSystem.Shared.Messaging/BookingSystem.Shared.Messaging.csproj" />
   </ItemGroup>
 </Project>

@@ -1,6 +1,6 @@
 namespace BookingSystem.Shared.Contracts.DTOs;
 
-public record ListingDto(
+public record CatalogDto(
     Guid Id,
     string Title,
     string Description,
@@ -10,10 +10,10 @@ public record ListingDto(
 
 public static class ListingDtoExtensions
 {
-    public static bool IsAvailable(this ListingDto listing, DateRange period) =>
+    public static bool IsAvailable(this CatalogDto listing, DateRange period) =>
         listing.IsAvailable;
 
-    public static (decimal Amount, string Currency) CalculatePrice(this ListingDto listing, DateRange period) =>
+    public static (decimal Amount, string Currency) CalculatePrice(this CatalogDto listing, DateRange period) =>
         (listing.PricePerNight * period.Nights, listing.Currency);
 }
 

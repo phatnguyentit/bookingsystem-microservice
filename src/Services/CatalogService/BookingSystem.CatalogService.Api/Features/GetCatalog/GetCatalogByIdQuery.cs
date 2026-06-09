@@ -4,16 +4,16 @@ using MediatR;
 
 namespace BookingSystem.CatalogService.Api.Features.GetListing;
 
-public record GetListingByIdQuery(Guid ListingId) : IRequest<ListingDto?>;
+public record GetCatalogByIdQuery(Guid CatalogId) : IRequest<CatalogDto?>;
 
-public class GetListingByIdHandler(IListingRepository repo)
-    : IRequestHandler<GetListingByIdQuery, ListingDto?>
+public class GetCatalogByIdHandler(IListingRepository repo)
+    : IRequestHandler<GetCatalogByIdQuery, CatalogDto?>
 {
-    public async Task<ListingDto?> Handle(GetListingByIdQuery q, CancellationToken cancellationToken)
+    public async Task<CatalogDto?> Handle(GetCatalogByIdQuery query, CancellationToken cancellationToken)
     {
-        var listing = await repo.GetByIdAsync(q.ListingId, cancellationToken);
+        var listing = await repo.GetByIdAsync(query.CatalogId, cancellationToken);
         return listing is null ? null
-            : new ListingDto(
+            : new CatalogDto(
                 listing.Id,
                 listing.Title,
                 listing.Description,

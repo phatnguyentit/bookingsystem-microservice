@@ -17,8 +17,8 @@ public class BookingConfiguration : IEntityTypeConfiguration<Booking>
         builder.Property(b => b.UserId)
             .HasConversion(id => id.Value, v => new UserId(v));
 
-        builder.Property(b => b.ListingId)
-            .HasConversion(id => id.Value, v => new ListingId(v));
+        builder.Property(b => b.CatalogId)
+            .HasConversion(id => id.Value, v => new CatalogId(v));
 
         builder.OwnsOne(b => b.Period, p =>
         {

@@ -5,7 +5,7 @@ namespace BookingSystem.ReviewService.Api.Features.CreateReview;
 
 public record CreateReviewCommand(
     Guid BookingId,
-    Guid ListingId,
+    Guid CatalogId,
     Guid UserId,
     int Rating,
     string Comment) : IRequest<Guid>;
@@ -22,7 +22,7 @@ public class CreateReviewHandler(IReviewRepository repo)
         {
             Id = Guid.NewGuid(),
             BookingId = cmd.BookingId,
-            ListingId = cmd.ListingId,
+            CatalogId = cmd.CatalogId,
             UserId = cmd.UserId,
             Rating = cmd.Rating,
             Comment = cmd.Comment,

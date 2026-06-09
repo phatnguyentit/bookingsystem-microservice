@@ -17,7 +17,7 @@ namespace BookingSystem.BookingService.Infrastructure.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ListingId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CatalogId = table.Column<Guid>(type: "uuid", nullable: false),
                     check_in = table.Column<DateOnly>(type: "date", nullable: false),
                     check_out = table.Column<DateOnly>(type: "date", nullable: false),
                     price_amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),

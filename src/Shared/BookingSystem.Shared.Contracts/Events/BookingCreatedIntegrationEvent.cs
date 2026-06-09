@@ -3,7 +3,7 @@ namespace BookingSystem.Shared.Contracts.Events;
 public record BookingCreatedIntegrationEvent(
     Guid BookingId,
     Guid UserId,
-    Guid ListingId,
+    Guid CatalogId,
     DateOnly CheckIn,
     DateOnly CheckOut,
     decimal Amount,
