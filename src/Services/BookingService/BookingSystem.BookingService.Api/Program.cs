@@ -33,12 +33,7 @@ builder.Services.AddHttpClient<ICatalogServiceClient, CatalogServiceClient>(
 builder.Services.AddHttpClient<IUserServiceClient, UserServiceClient>(
     c => c.BaseAddress = new Uri("http://user-service"));
 
-builder.Services.AddSingleton<IEventPublisher>(sp =>
-{
-    var bootstrapServers = builder.Configuration["Kafka:BootstrapServers"] ?? "localhost:9092";
-    var logger = sp.GetRequiredService<ILogger<KafkaEventPublisher>>();
-    return new KafkaEventPublisher(bootstrapServers, logger);
-});
+builder.Services.AddKafkaMessaging(builder.Configuration);
 
 var app = builder.Build();
 

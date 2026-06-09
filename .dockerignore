@@ -1,0 +1,16 @@
+.git
+.vs
+.vscode
+.github
+.claude
+.temp-yarp-inspect
+**/bin/
+**/obj/
+**/*.user
+**/*.suo
+docker/
+docs/
+*.md
+*.slnx
+.gitignore
+LICENSE
