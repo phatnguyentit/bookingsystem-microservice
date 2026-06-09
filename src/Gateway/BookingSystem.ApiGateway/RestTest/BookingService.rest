@@ -1,0 +1,27 @@
+### Call BookingService (through API Gateway)
+### Port is dynamic — update @baseUrl after each Aspire restart
+@baseUrl = http://localhost:64963
+@bookingId = 28bbe4c0-7cfe-4e02-93b5-b42962d8a4ef
+
+### Create Booking
+POST {{baseUrl}}/api/bookings
+Content-Type: application/json
+
+{
+  "userId": "11111111-1111-1111-1111-111111111111",
+  "catalogId": "9118de00-bc3c-4551-9e68-4e760b6a7c5b",
+  "checkIn": "2026-06-08",
+  "checkOut": "2026-06-09"
+}
+
+### Get Booking
+GET {{baseUrl}}/api/bookings/{{bookingId}}
+
+### Cancel Booking
+DELETE {{baseUrl}}/api/bookings/{{bookingId}}?reason=Change%20of%20plans
+
+###
+### Via API Gateway (requires valid JWT — issuer not configured yet)
+# @baseUrl = https://localhost:64963
+# @token = <your-jwt-token>
+# Authorization: Bearer {{token}}
