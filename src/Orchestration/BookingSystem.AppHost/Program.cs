@@ -75,7 +75,8 @@ var bookingSvc = builder.AddProject<Projects.BookingSystem_BookingService_Api>("
     .WithReference(redis)
     .WithReference(kafka)
     .WithReference(userSvc)
-    .WithReference(catalogSvc);
+    .WithReference(catalogSvc)
+    .WaitFor(kafka);
 
 var paymentSvc = builder.AddProject<Projects.BookingSystem_PaymentService_Api>("payment-service")
     .WithReference(paymentDb)

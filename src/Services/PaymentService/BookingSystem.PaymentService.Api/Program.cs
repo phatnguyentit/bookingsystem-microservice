@@ -1,3 +1,4 @@
+using BookingSystem.PaymentService.Api.Consumers;
 using BookingSystem.PaymentService.Api.Endpoints;
 using BookingSystem.PaymentService.Infrastructure.Persistence;
 using BookingSystem.ServiceDefaults;
@@ -15,6 +16,7 @@ builder.Services.AddMediatR(cfg =>
 builder.Services.AddKafkaMessaging(builder.Configuration);
 
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddHostedService<BookingCreatedPaymentConsumer>();
 
 var app = builder.Build();
 
