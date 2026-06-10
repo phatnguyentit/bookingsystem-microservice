@@ -15,7 +15,8 @@ BookingSystem.ReviewService.Api/
 BookingSystem.ReviewService.Infrastructure/
 └── Persistence/
     ├── ReviewDbContext.cs        ← Review entity + IReviewRepository + ReviewRepository
-    └── (no migrations directory yet)
+    ├── ReviewDbContextFactory.cs ← IDesignTimeDbContextFactory for dotnet ef
+    └── Migrations/
 ```
 
 ## Entity
@@ -35,7 +36,7 @@ public class Review
 }
 ```
 
-Table name: `reviews`. Configuration inline in `OnModelCreating`.
+Table name: `reviews`; columns mapped to `snake_case` (`booking_id`, `catalog_id`, `user_id`, `created_at`). Configuration inline in `OnModelCreating`.
 
 ## Repository
 
@@ -79,7 +80,7 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Progr
 builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 ```
 
-No Redis, no Kafka, no `RunMigrationsOnStartup` block, no migrations directory.
+No Redis, no Kafka. Has a `RunMigrationsOnStartup` block using `MigrateWithRetryAsync` (set to `true` in `appsettings.json`).
 
 ## Kafka
 
@@ -87,7 +88,6 @@ ReviewService has **no Kafka producer or consumer**. Reviews are submitted via d
 
 ## Gaps
 
-- No migrations directory (schema must be created manually or via `dotnet ef`)
 - No aggregate rating endpoint — see GitHub issue #17
 - No validation that a review's `BookingId` belongs to the `UserId` (any user can post any review)
 - No update or delete endpoint

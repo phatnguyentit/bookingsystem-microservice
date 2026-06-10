@@ -22,8 +22,13 @@ public class ReviewDbContext(DbContextOptions<ReviewDbContext> options) : DbCont
         mb.Entity<Review>(e =>
         {
             e.HasKey(r => r.Id);
-            e.Property(r => r.Rating);
-            e.Property(r => r.Comment).HasMaxLength(2000);
+            e.Property(r => r.Id).HasColumnName("id");
+            e.Property(r => r.BookingId).HasColumnName("booking_id");
+            e.Property(r => r.CatalogId).HasColumnName("catalog_id");
+            e.Property(r => r.UserId).HasColumnName("user_id");
+            e.Property(r => r.Rating).HasColumnName("rating");
+            e.Property(r => r.Comment).HasColumnName("comment").HasMaxLength(2000);
+            e.Property(r => r.CreatedAt).HasColumnName("created_at");
             e.ToTable("reviews");
         });
     }

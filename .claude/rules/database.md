@@ -102,7 +102,7 @@ public class BookingDbContextFactory : IDesignTimeDbContextFactory<BookingDbCont
     public BookingDbContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<BookingDbContext>()
-            .UseNpgsql("Host=localhost;Database=BookingDb;Username=postgres;Password=postgres")
+            .UseNpgsql("connection string from aspire setup")
             .Options;
         return new BookingDbContext(options);
     }
@@ -116,8 +116,7 @@ dotnet ef migrations add <Name> --project src/Services/{Name}Service/BookingSyst
 dotnet ef database update  --project src/Services/{Name}Service/BookingSystem.{Name}Service.Infrastructure
 ```
 
-Services with migrations directories: BookingService, CatalogService, PaymentService, NotificationService.  
-Services without yet: UserService, ReviewService.
+All services with a database have migrations: BookingService, CatalogService, PaymentService, NotificationService, UserService, ReviewService.
 
 ## Auto-migration at startup
 

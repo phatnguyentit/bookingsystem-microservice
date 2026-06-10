@@ -42,7 +42,7 @@ There are no test projects yet.
 
 ### EF Migrations
 
-Run from each service's Infrastructure project (services with migrations: BookingService, CatalogService, PaymentService, NotificationService):
+Run from each service's Infrastructure project (all services with a database have migrations: BookingService, CatalogService, PaymentService, NotificationService, UserService, ReviewService):
 
 ```powershell
 dotnet ef migrations add <Name> --project src/Services/<ServiceName>/BookingSystem.<ServiceName>Service.Infrastructure
