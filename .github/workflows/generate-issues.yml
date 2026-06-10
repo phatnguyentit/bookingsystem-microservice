@@ -1,0 +1,74 @@
+name: AI Issue Generator
+
+# Manual-only: never runs on push/PR. Trigger from the Actions tab → "Run workflow".
+on:
+  workflow_dispatch:
+    inputs:
+      issue_count:
+        description: "How many issues/features to generate"
+        required: false
+        default: "3"
+      theme:
+        description: "Optional focus (e.g. 'payments', 'observability'). Blank = free choice across services."
+        required: false
+        default: ""
+      dry_run:
+        description: "Preview only — print proposed issues to the log without creating them"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  generate-issues:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      # Mint a short-lived installation token for the booking-ai-analyst GitHub App
+      # so the issues are created *by the bot* rather than the GITHUB_TOKEN actor.
+      - name: Generate booking-ai-analyst bot token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: "4008612" # booking-ai-analyst App ID (not secret)
+          private-key: ${{ secrets.AI_ANALYST_APP_PRIVATE_KEY }}
+
+      - name: Generate issues with Claude (as the bot)
+        uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Run all gh operations as the bot installation token.
+          github_token: ${{ steps.app-token.outputs.token }}
+          prompt: |
+            You are running headless as the **booking-ai-analyst** bot in a manually
+            triggered workflow. The `gh` CLI is already authenticated as the bot.
+
+            GOAL: propose ${{ inputs.issue_count }} NEW, distinct feature/improvement ideas
+            for this booking-system microservices repository and open them as GitHub issues.
+
+            STEPS:
+            1. Read `CLAUDE.md` and the files under `.claude/rules/` (especially the per-module
+               "Gaps" sections) to ground the ideas in the real architecture and known gaps.
+            2. Run `gh issue list --state all --limit 100` and do NOT duplicate an existing
+               issue (open or closed).
+            3. ${{ inputs.theme != '' && format('Focus every idea on: {0}.', inputs.theme) || 'Choose high-value ideas spread across different services.' }}
+            4. For each idea, write a concise title (no "@claude" anywhere) and a body with these
+               markdown sections: `## Summary`, `## Motivation`, `## Proposed approach`,
+               `## Acceptance Criteria`.
+            5. ${{ inputs.dry_run && 'DRY RUN — do NOT create anything. Print each proposed title and full body to the job log instead.' || format('Create EXACTLY {0} issues using `gh issue create --title "..." --body "..." --label enhancement`. Never create more than {0}.', inputs.issue_count) }}
+
+            HARD CONSTRAINTS:
+            - Create at most ${{ inputs.issue_count }} issues — nothing more.
+            - Only create issues. Do NOT modify files, branches, commits, or pull requests.
+          claude_args: |
+            --max-turns 20
+            --allowedTools "Read,Glob,Grep,Bash(gh issue list:*),Bash(gh issue create:*),Bash(gh label list:*)"
