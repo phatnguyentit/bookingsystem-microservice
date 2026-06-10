@@ -53,3 +53,12 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Temporary scratch/inspection projects
+.temp-*/
+
+# Local secrets — never commit
+!.env
+.env.dev
+# claude settings
+.claude/*.json
