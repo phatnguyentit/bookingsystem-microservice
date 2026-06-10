@@ -8,7 +8,7 @@ public class CatalogDbContextFactory : IDesignTimeDbContextFactory<CatalogDbCont
     public CatalogDbContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<CatalogDbContext>()
-            .UseNpgsql("Host=localhost;Database=catalogdb;Username=postgres;Password=postgres")
+            .UseNpgsql("catalogdb")
             .Options;
 
         return new CatalogDbContext(options);

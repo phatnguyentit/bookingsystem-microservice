@@ -8,7 +8,7 @@ public class PaymentDbContextFactory : IDesignTimeDbContextFactory<PaymentDbCont
     public PaymentDbContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<PaymentDbContext>()
-            .UseNpgsql("Host=localhost;Database=PaymentDb;Username=postgres;Password=postgres")
+            .UseNpgsql("paymentdb")
             .Options;
 
         return new PaymentDbContext(options);

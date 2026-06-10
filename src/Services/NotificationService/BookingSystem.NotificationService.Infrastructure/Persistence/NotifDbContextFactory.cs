@@ -8,7 +8,7 @@ public class NotifDbContextFactory : IDesignTimeDbContextFactory<NotifDbContext>
     public NotifDbContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<NotifDbContext>()
-            .UseNpgsql("Host=localhost;Database=NotifDb;Username=postgres;Password=postgres")
+            .UseNpgsql("notifdb")
             .Options;
 
         return new NotifDbContext(options);

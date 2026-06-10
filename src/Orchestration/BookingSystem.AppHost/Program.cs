@@ -7,7 +7,17 @@ var builder = DistributedApplication.CreateBuilder(args);
 // --- Infrastructure ---
 var v = InfraVersions.Load(builder.AppHostDirectory);
 
-var postgres = builder.AddPostgres("postgres").WithImageTag(v.Postgres).WithPgAdmin();
+// Persistent database
+var username = builder.AddParameter("username", "postgres", secret: true);
+var password = builder.AddParameter("password", "postgres", secret: true);
+
+var postgres = builder.AddPostgres("postgres")
+.WithImageTag(v.Postgres)
+.WithPgAdmin()
+.WithDataVolume("booking-system-postgres-data")
+.WithContainerName("booking-system-postgres")
+.WithUserName(username).WithPassword(password);
+
 var redis = builder.AddRedis("redis").WithImageTag(v.Redis).WithRedisCommander();
 var kafka = builder.AddKafka("kafka").WithImageTag(v.Kafka).WithKafkaUI();
 var elastic = builder.AddElasticsearch("elasticsearch").WithImageTag(v.Elasticsearch);
@@ -64,11 +74,13 @@ var reviewDb = postgres.AddDatabase("reviewdb");
 // --- Core Services ---
 var userSvc = builder.AddProject<Projects.BookingSystem_UserService_Api>("user-service")
     .WithReference(userDb)
-    .WithReference(redis);
+    .WithReference(redis)
+    .WaitFor(userDb);
 
 var catalogSvc = builder.AddProject<Projects.BookingSystem_CatalogService_Api>("catalog-service")
     .WithReference(catalogDb)
-    .WithReference(redis);
+    .WithReference(redis)
+    .WaitFor(catalogDb);
 
 var bookingSvc = builder.AddProject<Projects.BookingSystem_BookingService_Api>("booking-service")
     .WithReference(bookingDb)
@@ -76,18 +88,23 @@ var bookingSvc = builder.AddProject<Projects.BookingSystem_BookingService_Api>("
     .WithReference(kafka)
     .WithReference(userSvc)
     .WithReference(catalogSvc)
-    .WaitFor(kafka);
+    .WaitFor(kafka)
+    .WaitFor(bookingDb)
+    .WaitFor(userSvc)
+    .WaitFor(catalogSvc);
 
 var paymentSvc = builder.AddProject<Projects.BookingSystem_PaymentService_Api>("payment-service")
     .WithReference(paymentDb)
     .WithReference(kafka)
-    .WaitFor(kafka);
+    .WaitFor(kafka)
+    .WaitFor(paymentDb);
 
 var notifSvc = builder.AddProject<Projects.BookingSystem_NotificationService_Api>("notification-service")
     .WithReference(notifDb)
     .WithReference(kafka)
     .WithReference(redis)
-    .WaitFor(kafka);
+    .WaitFor(kafka)
+    .WaitFor(notifDb);
 
 var searchSvc = builder.AddProject<Projects.BookingSystem_SearchService_Api>("search-service")
     .WithReference(elastic)
@@ -96,7 +113,9 @@ var searchSvc = builder.AddProject<Projects.BookingSystem_SearchService_Api>("se
 
 var reviewSvc = builder.AddProject<Projects.BookingSystem_ReviewService_Api>("review-service")
     .WithReference(reviewDb)
-    .WithReference(kafka);
+    .WithReference(kafka)
+    .WaitFor(reviewDb)
+    .WaitFor(kafka);
 
 // --- API Gateway ---
 builder.AddProject<Projects.BookingSystem_ApiGateway>("api-gateway")
