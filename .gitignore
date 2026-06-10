@@ -62,3 +62,6 @@ nunit-*.xml
 .env.dev
 # claude settings
 .claude/*.json
+# GitHub App private keys — NEVER commit (bot credential)
+*.pem
+tools/git-bot/*.pem
