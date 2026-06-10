@@ -6,6 +6,6 @@ namespace BookingSystem.BookingService.Infrastructure.HttpClients;
 
 public class CatalogServiceClient(HttpClient http) : ICatalogServiceClient
 {
-    public Task<ListingDto?> GetListingAsync(Guid listingId, CancellationToken cancellationToken = default)
-        => http.GetFromJsonAsync<ListingDto>($"/api/catalog/listings/{listingId}", cancellationToken);
+    public Task<CatalogDto?> GetCatalogAsync(Guid catalogId, CancellationToken cancellationToken = default)
+        => http.GetFromJsonAsync<CatalogDto>($"/api/catalog/catalogs/{catalogId}", cancellationToken);
 }

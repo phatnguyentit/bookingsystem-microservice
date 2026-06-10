@@ -13,11 +13,11 @@ public class PublishBookingCreatedHandler(IEventPublisher publisher)
             new BookingCreatedIntegrationEvent(
                 notification.BookingId.Value,
                 notification.UserId.Value,
-                notification.ListingId.Value,
-                default, // populated in infrastructure via full booking lookup
-                default,
-                0,
-                string.Empty,
+                notification.CatalogId.Value,
+                notification.Period.CheckIn,
+                notification.Period.CheckOut,
+                notification.TotalPrice.Amount,
+                notification.TotalPrice.Currency,
                 DateTime.UtcNow), cancellationToken);
 }
 
@@ -28,8 +28,8 @@ public class PublishBookingCancelledHandler(IEventPublisher publisher)
         => publisher.PublishAsync("booking.cancelled",
             new BookingCancelledIntegrationEvent(
                 notification.BookingId.Value,
-                Guid.Empty,
-                Guid.Empty,
+                notification.UserId.Value,
+                notification.CatalogId.Value,
                 notification.Reason,
                 DateTime.UtcNow), cancellationToken);
 }

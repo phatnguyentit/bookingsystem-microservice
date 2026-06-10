@@ -14,9 +14,9 @@ public class BookingRepository(BookingDbContext dbContext) : IBookingRepository
     public async Task AddAsync(Booking booking, CancellationToken cancellationToken = default)
         => await dbContext.Bookings.AddAsync(booking, cancellationToken);
 
-    public Task<bool> HasOverlapAsync(ListingId listingId, DateRange period, CancellationToken cancellationToken = default)
+    public Task<bool> HasOverlapAsync(CatalogId catalogId, DateRange period, CancellationToken cancellationToken = default)
         => dbContext.Bookings.AnyAsync(b =>
-            b.ListingId == listingId &&
+            b.CatalogId == catalogId &&
             b.Status != BookingStatus.Cancelled &&
             b.Period.CheckIn < period.CheckOut &&
             b.Period.CheckOut > period.CheckIn, cancellationToken);

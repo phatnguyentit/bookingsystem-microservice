@@ -9,7 +9,7 @@ public static class BookingEndpoints
 {
     public static void MapBookingEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("/api/bookings").RequireAuthorization();
+        var group = app.MapGroup("/api/bookings");
 
         group.MapPost("/", async (CreateBookingCommand cmd, ISender sender) =>
         {

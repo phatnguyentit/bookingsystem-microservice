@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BookingSystem.CatalogService.Infrastructure.Persistence;
 
-public class Listing
+public class Catalog
 {
     public Guid Id { get; set; }
     public string Title { get; set; } = string.Empty;
@@ -15,17 +15,17 @@ public class Listing
 
 public class CatalogDbContext(DbContextOptions<CatalogDbContext> options) : DbContext(options)
 {
-    public DbSet<Listing> Listings => Set<Listing>();
+    public DbSet<Catalog> Catalogs => Set<Catalog>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
-        mb.Entity<Listing>(e =>
+        mb.Entity<Catalog>(e =>
         {
             e.HasKey(l => l.Id);
             e.Property(l => l.Title).HasMaxLength(300).IsRequired();
             e.Property(l => l.PricePerNight).HasColumnType("decimal(18,2)");
             e.Property(l => l.Currency).HasMaxLength(3);
-            e.ToTable("listings");
+            e.ToTable("catalogs");
         });
     }
 }

@@ -17,21 +17,21 @@ public class CreateBookingHandler(
     {
         var period = new DateRange(cmd.CheckIn, cmd.CheckOut);
 
-        var listing = await catalogClient.GetListingAsync(cmd.ListingId, cancellationToken)
-            ?? throw new NotFoundException($"Listing {cmd.ListingId} not found.");
+        var catalog = await catalogClient.GetCatalogAsync(cmd.CatalogId, cancellationToken)
+            ?? throw new NotFoundException($"Catalog {cmd.CatalogId} not found.");
 
-        if (!listing.IsAvailable)
-            throw new ListingNotAvailableException(cmd.ListingId, period);
+        if (!catalog.IsAvailable)
+            throw new ListingNotAvailableException(cmd.CatalogId, period);
 
-        if (await bookingRepo.HasOverlapAsync(new ListingId(cmd.ListingId), period, cancellationToken))
+        if (await bookingRepo.HasOverlapAsync(new CatalogId(cmd.CatalogId), period, cancellationToken))
             throw new BookingOverlapException();
 
-        var (amount, currency) = (listing.PricePerNight * period.Nights, listing.Currency);
+        var (amount, currency) = (catalog.PricePerNight * period.Nights, catalog.Currency);
         var totalPrice = new Money(amount, currency);
 
         var booking = Booking.Create(
             new UserId(cmd.UserId),
-            new ListingId(cmd.ListingId),
+            new CatalogId(cmd.CatalogId),
             period,
             totalPrice);
 

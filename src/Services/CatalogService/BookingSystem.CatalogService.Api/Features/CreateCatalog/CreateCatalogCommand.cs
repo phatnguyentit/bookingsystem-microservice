@@ -4,18 +4,18 @@ using MediatR;
 
 namespace BookingSystem.CatalogService.Api.Features.CreateListing;
 
-public record CreateListingCommand(
+public record CreateCatalogCommand(
     string Title,
     string Description,
     decimal PricePerNight,
     string Currency) : IRequest<Guid>;
 
-public class CreateListingHandler(IListingRepository repo)
-    : IRequestHandler<CreateListingCommand, Guid>
+public class CreateCatalogHandler(IListingRepository repo)
+    : IRequestHandler<CreateCatalogCommand, Guid>
 {
-    public async Task<Guid> Handle(CreateListingCommand cmd, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreateCatalogCommand cmd, CancellationToken cancellationToken)
     {
-        var listing = new Listing
+        var catalog = new Catalog
         {
             Id = Guid.NewGuid(),
             Title = cmd.Title,
@@ -25,7 +25,7 @@ public class CreateListingHandler(IListingRepository repo)
             IsAvailable = true,
             CreatedAt = DateTime.UtcNow
         };
-        await repo.AddAsync(listing, cancellationToken);
-        return listing.Id;
+        await repo.AddAsync(catalog, cancellationToken);
+        return catalog.Id;
     }
 }

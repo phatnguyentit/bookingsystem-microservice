@@ -43,5 +43,6 @@
   <Folder Name="/src/Shared/">
     <Project Path="src/Shared/BookingSystem.Shared.Contracts/BookingSystem.Shared.Contracts.csproj" />
     <Project Path="src/Shared/BookingSystem.Shared.Messaging/BookingSystem.Shared.Messaging.csproj" />
+    <Project Path="src/Shared/BookingSystem.Shared.Persistence/BookingSystem.Shared.Persistence.csproj" />
   </Folder>
 </Solution>

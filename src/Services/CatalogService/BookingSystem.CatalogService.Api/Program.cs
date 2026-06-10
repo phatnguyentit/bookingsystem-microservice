@@ -1,4 +1,5 @@
 using BookingSystem.CatalogService.Api.Endpoints;
+using BookingSystem.Shared.Persistence;
 using BookingSystem.CatalogService.Infrastructure.Persistence;
 using BookingSystem.CatalogService.Infrastructure.Repositories;
 using BookingSystem.ServiceDefaults;
@@ -15,6 +16,14 @@ builder.Services.AddMediatR(cfg =>
 builder.Services.AddScoped<IListingRepository, ListingRepository>();
 
 var app = builder.Build();
+
+if (app.Configuration.GetValue<bool>("RunMigrationsOnStartup"))
+{
+    using var scope = app.Services.CreateAsyncScope();
+    var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<CatalogDbContext>>();
+    await db.MigrateWithRetryAsync(logger, attempts: 5, delay: TimeSpan.FromSeconds(2));
+}
 
 app.MapDefaultEndpoints();
 app.MapCatalogEndpoints();

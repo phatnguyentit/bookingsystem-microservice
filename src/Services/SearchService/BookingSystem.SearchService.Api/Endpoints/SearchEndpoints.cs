@@ -1,4 +1,4 @@
-using BookingSystem.SearchService.Api.Features.SearchListings;
+using BookingSystem.SearchService.Api.Features.SearchCatalogs;
 using MediatR;
 
 namespace BookingSystem.SearchService.Api.Endpoints;
@@ -9,7 +9,7 @@ public static class SearchEndpoints
     {
         var group = app.MapGroup("/api/search");
 
-        group.MapGet("/listings", async (
+        group.MapGet("/catalogs", async (
             string? query,
             DateOnly? checkIn,
             DateOnly? checkOut,
@@ -18,10 +18,10 @@ public static class SearchEndpoints
             int pageSize,
             ISender sender) =>
         {
-            var results = await sender.Send(new SearchListingsQuery(
+            var results = await sender.Send(new SearchCatalogsQuery(
                 query, checkIn, checkOut, maxPrice, page, pageSize));
             return Results.Ok(results);
         })
-        .WithName("SearchListings");
+        .WithName("SearchCatalogs");
     }
 }

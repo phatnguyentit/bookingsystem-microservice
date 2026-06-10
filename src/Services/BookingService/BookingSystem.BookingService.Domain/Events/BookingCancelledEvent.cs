@@ -3,7 +3,13 @@ using BookingSystem.BookingService.Domain.ValueObjects;
 
 namespace BookingSystem.BookingService.Domain.Events;
 
-public record BookingCancelledEvent(BookingId BookingId, string Reason) : IDomainEvent
+public record BookingCancelledEvent(
+    BookingId BookingId,
+    UserId UserId,
+    CatalogId CatalogId,
+    string Reason) : IDomainEvent
 {
-    public static BookingCancelledEvent Create(BookingId bookingId, string reason) => new(bookingId, reason);
+    public static BookingCancelledEvent Create(
+        BookingId bookingId, UserId userId, CatalogId catalogId, string reason)
+        => new(bookingId, userId, catalogId, reason);
 }

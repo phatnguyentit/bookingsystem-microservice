@@ -1,0 +1,164 @@
+{
+  "info": {
+    "name": "BookingSystem Workflow",
+    "_postman_id": "bookingsystem-workflow-v1",
+    "description": "End-to-end workflow: Create Catalog → Create Booking using the returned catalogId. Run requests in folder order.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:64963",
+      "description": "API Gateway base URL — update after each Aspire restart"
+    },
+    {
+      "key": "catalogId",
+      "value": "",
+      "description": "Set automatically after Create Catalog succeeds"
+    },
+    {
+      "key": "bookingId",
+      "value": "",
+      "description": "Set automatically after Create Booking succeeds"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Catalog",
+      "item": [
+        {
+          "name": "Create Catalog",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has id', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.id).to.be.a('string').and.not.empty;",
+                  "    pm.collectionVariables.set('catalogId', json.id);",
+                  "    console.log('catalogId captured:', json.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Catalog description 1\",\n  \"description\": \"Catalog description 1\",\n  \"pricePerNight\": 100.00,\n  \"currency\": \"USD\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/catalog/catalogs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "catalog", "catalogs"]
+            }
+          }
+        },
+        {
+          "name": "Get Catalog",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/catalog/catalogs/{{catalogId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "catalog", "catalogs", "{{catalogId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Booking",
+      "item": [
+        {
+          "name": "Create Booking",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var catalogId = pm.collectionVariables.get('catalogId');",
+                  "if (!catalogId) {",
+                  "    throw new Error('catalogId is empty — run Create Catalog first');",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has id', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.id).to.be.a('string').and.not.empty;",
+                  "    pm.collectionVariables.set('bookingId', json.id);",
+                  "    console.log('bookingId captured:', json.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"11111111-1111-1111-1111-111111111111\",\n  \"catalogId\": \"{{catalogId}}\",\n  \"checkIn\": \"2026-06-08\",\n  \"checkOut\": \"2026-06-09\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings"]
+            }
+          }
+        },
+        {
+          "name": "Get Booking",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/{{bookingId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "{{bookingId}}"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/{{bookingId}}?reason=Change%20of%20plans",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "{{bookingId}}"],
+              "query": [
+                { "key": "reason", "value": "Change of plans" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

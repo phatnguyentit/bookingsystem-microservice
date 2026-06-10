@@ -10,19 +10,18 @@ public static class CatalogEndpoints
     {
         var group = app.MapGroup("/api/catalog");
 
-        group.MapGet("/listings/{id:guid}", async (Guid id, ISender sender) =>
+        group.MapGet("/catalogs/{id:guid}", async (Guid id, ISender sender) =>
         {
-            var listing = await sender.Send(new GetListingByIdQuery(id));
+            var listing = await sender.Send(new GetCatalogByIdQuery(id));
             return listing is null ? Results.NotFound() : Results.Ok(listing);
         })
         .WithName("GetListing");
 
-        group.MapPost("/listings", async (CreateListingCommand cmd, ISender sender) =>
+        group.MapPost("/catalogs", async (CreateCatalogCommand cmd, ISender sender) =>
         {
             var id = await sender.Send(cmd);
-            return Results.Created($"/api/catalog/listings/{id}", new { id });
+            return Results.Created($"/api/catalog/catalogs/{id}", new { id });
         })
-        .RequireAuthorization()
         .WithName("CreateListing");
     }
 }

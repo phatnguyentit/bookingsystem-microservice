@@ -1,0 +1,6 @@
+{
+  "kafka": "7.7.0",
+  "postgres": "17",
+  "redis": "7-alpine",
+  "elasticsearch": "8.15.0"
+}

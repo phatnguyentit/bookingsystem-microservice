@@ -1,5 +1,6 @@
+using BookingSystem.BookingService.Api.Consumers;
 using BookingSystem.BookingService.Api.Endpoints;
-using Microsoft.EntityFrameworkCore;
+using BookingSystem.Shared.Persistence;
 using BookingSystem.BookingService.Application.Commands.CreateBooking;
 using BookingSystem.BookingService.Application.Interfaces;
 using BookingSystem.BookingService.Application.Interfaces.UoW;
@@ -33,12 +34,9 @@ builder.Services.AddHttpClient<ICatalogServiceClient, CatalogServiceClient>(
 builder.Services.AddHttpClient<IUserServiceClient, UserServiceClient>(
     c => c.BaseAddress = new Uri("http://user-service"));
 
-builder.Services.AddSingleton<IEventPublisher>(sp =>
-{
-    var bootstrapServers = builder.Configuration["Kafka:BootstrapServers"] ?? "localhost:9092";
-    var logger = sp.GetRequiredService<ILogger<KafkaEventPublisher>>();
-    return new KafkaEventPublisher(bootstrapServers, logger);
-});
+builder.Services.AddKafkaMessaging(builder.Configuration);
+builder.Services.AddHostedService<PaymentSucceededKafkaConsumer>();
+builder.Services.AddHostedService<PaymentFailedKafkaConsumer>();
 
 var app = builder.Build();
 

@@ -18,9 +18,9 @@ public static class ReviewEndpoints
         .RequireAuthorization()
         .WithName("CreateReview");
 
-        group.MapGet("/listing/{listingId:guid}", async (Guid listingId, IReviewRepository repo) =>
+        group.MapGet("/listing/{catalogId:guid}", async (Guid catalogId, IReviewRepository repo) =>
         {
-            var reviews = await repo.GetByListingAsync(listingId);
+            var reviews = await repo.GetByListingAsync(catalogId);
             return Results.Ok(reviews);
         })
         .WithName("GetReviewsByListing");

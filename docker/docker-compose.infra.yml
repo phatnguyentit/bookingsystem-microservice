@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:17
+    image: postgres:${POSTGRES_VERSION:-17}
     environment:
       POSTGRES_USER: booking
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-booking123}
@@ -16,7 +16,7 @@ services:
       retries: 5
 
   redis:
-    image: redis:7-alpine
+    image: redis:${REDIS_VERSION:-7-alpine}
     ports:
       - "6379:6379"
     healthcheck:
@@ -26,7 +26,7 @@ services:
       retries: 5
 
   kafka:
-    image: confluentinc/cp-kafka:7.7.0
+    image: confluentinc/cp-kafka:${KAFKA_VERSION:-7.7.0}
     environment:
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_NODE_ID: 1
@@ -57,7 +57,7 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
 
   elasticsearch:
-    image: elasticsearch:8.15.0
+    image: elasticsearch:${ELASTICSEARCH_VERSION:-8.15.0}
     environment:
       discovery.type: single-node
       xpack.security.enabled: "false"

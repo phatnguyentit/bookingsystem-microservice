@@ -14,7 +14,7 @@ public record SearchResult(IReadOnlyList<ListingDocument> Items, long Total, int
 
 public interface ISearchService
 {
-    Task<SearchResult> SearchListingsAsync(
+    Task<SearchResult> SearchCatalogsAsync(
         string? query,
         DateOnly? checkIn,
         DateOnly? checkOut,
@@ -28,9 +28,9 @@ public interface ISearchService
 
 public class ElasticsearchService(ElasticsearchClient client) : ISearchService
 {
-    private const string IndexName = "listings";
+    private const string IndexName = "catalogs";
 
-    public async Task<SearchResult> SearchListingsAsync(
+    public async Task<SearchResult> SearchCatalogsAsync(
         string? query,
         DateOnly? checkIn,
         DateOnly? checkOut,

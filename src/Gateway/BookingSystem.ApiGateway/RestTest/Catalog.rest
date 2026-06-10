@@ -1,0 +1,24 @@
+### Call CatalogService (through API Gateway)
+### Port is dynamic — update @baseUrl after each Aspire restart
+@baseUrl = http://localhost:64963
+@catalogId = 521acc4e-a8a3-49ea-8fa6-4cae811be9b0
+
+### Create Catalog
+POST {{baseUrl}}/api/catalog/catalogs
+Content-Type: application/json  
+
+{
+  "Title": "Catalog description 1",
+  "Description": "Catalog description 1",
+  "PricePerNight": 100.00,
+  "Currency": "USD"
+}
+
+### Get Catalog
+GET {{baseUrl}}/api/catalog/catalogs/{{catalogId}}
+
+###
+### Via API Gateway (requires valid JWT — issuer not configured yet)
+# @baseUrl = https://localhost:64963
+# @token = <your-jwt-token>
+# Authorization: Bearer {{token}}

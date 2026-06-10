@@ -5,6 +5,6 @@ namespace BookingSystem.BookingService.Application.Commands.CreateBooking;
 
 public record CreateBookingCommand(
     Guid UserId,
-    Guid ListingId,
+    Guid CatalogId,
     DateOnly CheckIn,
     DateOnly CheckOut) : IRequest<BookingId>;

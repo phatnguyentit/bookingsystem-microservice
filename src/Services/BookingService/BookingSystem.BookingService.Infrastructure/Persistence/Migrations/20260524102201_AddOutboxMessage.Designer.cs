@@ -30,7 +30,7 @@ namespace BookingSystem.BookingService.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ListingId")
+                    b.Property<Guid>("CatalogId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Status")
