@@ -27,13 +27,15 @@ Read for context first; never file an issue from a guess.
    open the relevant source under `src/Services/<Service>/` (and `src/Shared/`,
    `src/Orchestration/`) and verify the gap still exists. Cite the real
    `file_path:line` in the issue.
-3. **Check existing issues** so you don't duplicate:
+3. **Check existing issues** so you don't duplicate. Search by keyword and pull only the
+   fields you need — don't dump the whole backlog into context:
    ```powershell
-   gh issue list --state all --limit 100
-   gh issue list --search "<keywords>"
+   gh issue list --state all --search "<keywords>" --json number,title,state,labels
    ```
-   Several gaps already have issues (e.g. #16 catalog/search, #17 review rating,
-   #18 booking amendment). Reference them instead of recreating them.
+   **Known already-filed gaps** (skip these unless reopening/expanding — reference them
+   instead): `#16` catalog/search filters & availability, `#17` review aggregate rating,
+   `#26` booking date amendment. Add new entries here as the bot files more, so future
+   runs short-circuit before searching.
 
 ## 2. Service map (quick reference)
 
@@ -54,96 +56,42 @@ Use the per-module rule file as the entry point for each service.
 Each issue is one self-contained, deliverable unit of work. Keep it scoped — if it needs
 "and" to describe two unrelated changes, split it into two stories.
 
-Use this body template (write it to a temp `.md` file and pass with `--body-file`, which
-avoids shell-quoting problems with multi-line bodies):
+### Templates are in the repo — do not re-invent them
 
-```markdown
-## Context
-<What part of the system this touches and why it matters. Link the rule file / source.>
+The story bodies are GitHub issue templates, the **single source of truth**:
 
-## Problem / Gap
-<The concrete thing that is missing or wrong. Cite file_path:line.>
+| Template file | Use for | Title format |
+|---|---|---|
+| `.github/ISSUE_TEMPLATE/feature-story.md` | Net-new capability spanning aggregate/endpoint/event work, often across services | `feat: <short summary>` |
+| `.github/ISSUE_TEMPLATE/bug-or-gap.md` | A scoped fix, missing behaviour, or tech-debt item | `<Service>: <imperative summary>` |
 
-## Proposed work
-<What "done" looks like, as concretely as you can without designing the whole solution.>
-
-## Acceptance criteria
-- [ ] <observable, testable outcome>
-- [ ] <observable, testable outcome>
-
-## Notes / References
-- Related: #<issue>, `.claude/rules/modules/<x>.md`
-- Affected service(s): <ServiceName>
-```
-
-Title format: imperative + scope, e.g.
-`SearchService: apply checkIn/checkOut/maxPrice filters to Elasticsearch query`.
-
-### Labels
-
-Apply existing repo labels (`--label`). Available:
-
-| Label | Use for |
-|---|---|
-| `feature` / `enhancement` | New capability or improvement |
-| `bug` | Something is broken/incorrect |
-| `documentation` | Docs-only work |
-| `runlane` | Small fixes found while working on a larger subject |
-| `question` | Needs a decision before work can start |
-
-Don't invent labels. If a needed label doesn't exist, mention it in the body instead.
-
-### Feature story template (the richer format)
-
-For a **feature** story — a net-new capability spanning aggregate/endpoint/event work,
-often across services — use the fuller structure below instead of the lightweight one
-above. This is the house style; the canonical worked example is
+Fill the sections from the chosen template; don't paste a template copy into this skill.
+Canonical worked example of the feature format:
 [issue #26](https://github.com/phatnguyentit/bookingsystem-microservice/issues/26)
-("feat: Booking date amendment"). Match its depth and section order.
+("feat: Booking date amendment") — match its depth and section order.
 
-```markdown
-## Business Context
-<Why this matters to a user/business. The current workaround and its cost.>
+Content rules that make a story actionable:
+- **Cite real `file_path:line`** for every claimed gap (verified in step 1.2).
+- **Acceptance criteria are observable and testable** — include expected HTTP codes,
+  "event persisted via outbox + published to Kafka", "existing flows unaffected".
+- **Reuse existing infrastructure** in the proposal (the outbox, the Redis distributed
+  lock, `catalog.availability.updated`) rather than inventing parallel mechanisms.
+- For features, split **Proposed Solution** into per-service `### <Service> changes`.
 
-## Problem Statement
-- <Concrete missing piece — e.g. no `PUT /api/bookings/{id}` endpoint exists.>
-- <Missing domain event / consumer / etc. Cite file_path:line where relevant.>
-- <Side effects of the gap today.>
+### Labels — deterministic mapping
 
-## Proposed Solution
+Pick the label from the story type; don't deliberate per issue. Pass via `--label`.
 
-### <PrimaryService> changes
-- <Domain event / aggregate method, with its guards and what it raises.>
-- <Command + handler (MediatR), endpoint shape and request body.>
+| Story type | Label | Notes |
+|---|---|---|
+| New capability / improvement / feature story | `enhancement` | **Always `enhancement`, never `feature`** — the repo has both, we standardize on `enhancement` (matches #26). |
+| Something broken or incorrect | `bug` | |
+| Docs-only work | `documentation` | |
+| Small fix found while working a larger subject | `runlane` | Stack with the type label if it's also a `bug`. |
+| Needs a decision before work can start | `question` | |
 
-### <OtherService(s)> changes
-- <Kafka event to publish/consume, notification, availability update, etc.>
-
-## Acceptance Criteria
-
-- [ ] <observable, testable outcome — include expected HTTP codes>
-- [ ] <e.g. domain event persisted via outbox and published to Kafka>
-- [ ] <e.g. existing create/cancel flows are unaffected>
-
-## Effort Estimate
-
-**<N–M days>**
-- Day 1: <slice>
-- Day 2: <slice>
-- Day 3: <slice>
-
-## Labels
-`<label>`, `<label>`
-```
-
-Notes on this format:
-- **Title** uses a Conventional-Commits prefix for features: `feat: <short summary>`.
-- Break **Proposed Solution** into per-service subsections (`### <Service> changes`) —
-  the booking flow usually touches more than one service.
-- The trailing **`## Labels`** line documents intent in the body; still also pass the
-  real labels via `--label` on the command (issue #26 carries the `enhancement` label).
-- Reuse existing infrastructure in your proposal (the outbox, the distributed lock,
-  `catalog.availability.updated`) rather than inventing parallel mechanisms.
+A story may carry more than one label (e.g. `bug` + `runlane`). Don't invent labels — if
+a needed one doesn't exist, note it in the body and tell the user.
 
 ## 4. Filing the story as the bot
 
@@ -151,25 +99,38 @@ Create issues through the in-repo wrapper so they are attributed to **booking-ai
 not the personal account. The wrapper sets `GH_TOKEN` only inside its own process — your
 shell identity is never changed.
 
-Run in **PowerShell**:
+Fill the chosen template into a temp `.md` file and pass it with `--body-file` (avoids
+shell-quoting problems with multi-line markdown). Run in **PowerShell**:
 
 ```powershell
-# Write the body to a temp file first (handles multi-line / markdown cleanly):
-Set-Content -Path "$env:TEMP\story.md" -Value $body -Encoding utf8
+# Use a unique temp file per story so a batch never overwrites itself:
+$body = @'
+## Context
+...
+'@
+Set-Content -Path "$env:TEMP\story-search-filters.md" -Value $body -Encoding utf8
 
 .\tools\git-bot\bot.ps1 issue `
   --title "SearchService: apply date and price filters to query" `
-  --body-file "$env:TEMP\story.md" `
-  --label feature
+  --body-file "$env:TEMP\story-search-filters.md" `
+  --label enhancement
 ```
 
 `bot.ps1 issue` passes all flags straight through to `gh issue create`, so `--assignee`,
-`--milestone`, `--project`, etc. work too.
+`--milestone`, `--project`, and `--template` work too.
 
-Verify and report back the created issue number/URL:
+**Capture the result.** `gh issue create` prints the new issue URL on stdout — that *is*
+the confirmation. Capture and report it; don't rely on `whoami` (it only checks the token,
+not whether the issue was created):
+
 ```powershell
-.\tools\git-bot\bot.ps1 whoami        # confirm token state / identity
+$url = .\tools\git-bot\bot.ps1 issue --title "..." --body-file "..." --label enhancement
+Write-Host "Filed: $url"
 ```
+
+**Batch in one session.** When filing several stories, run the `bot.ps1 issue` calls
+back-to-back in a single PowerShell invocation. The ~1h installation token is minted once
+and reused from cache, so N issues cost one mint instead of N.
 
 ### Bot tooling notes (gotchas)
 
@@ -182,11 +143,19 @@ Verify and report back the created issue number/URL:
 ## 5. Workflow summary
 
 1. Read `.claude/rules/` (esp. module **Gaps** sections) → shortlist candidates.
-2. Verify each candidate against real source; drop anything already fixed.
-3. `gh issue list --state all` → drop/duplicates; link related issues.
-4. For each surviving item: write the templated body, pick a title + label(s).
-5. File via `.\tools\git-bot\bot.ps1 issue --body-file ... --label ...`.
-6. Report the list of created issues (number + title + URL) back to the user.
+2. Verify each candidate against real source (`file_path:line`); drop anything already fixed.
+3. Dedup: check the known-filed map (§1.3), then `gh issue list --search ... --json ...`
+   for the rest; link related issues instead of recreating.
+4. **Present a triage table and wait for approval** (unless told to file directly):
 
-When proposing more than ~3 stories at once, list the titles for the user to confirm
-before filing, unless they've told you to file them directly.
+   | # | Candidate (title) | Service | Type | Label | Dup of |
+   |---|---|---|---|---|---|
+   | 1 | SearchService: apply date/price filters | SearchService | feature | `enhancement` | — |
+   | 2 | ... | ... | bug | `bug` | — |
+
+   This is the one-shot gate — the user approves/edits the batch before anything is live.
+5. For each approved item: fill the right template (§3) into a unique temp file.
+6. File back-to-back in one PowerShell session via
+   `.\tools\git-bot\bot.ps1 issue --body-file ... --label ...` (one token mint for the batch).
+7. Capture each printed issue URL and report the list (number + title + URL) to the user.
+8. Append any newly filed gaps to the known-filed map in §1.3.
