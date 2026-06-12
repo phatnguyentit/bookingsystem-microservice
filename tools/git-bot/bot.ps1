@@ -11,6 +11,8 @@
       bot push [<refspec|flags>]   Push (default: current branch) using a bot token.
       bot pr   <gh pr create args> Open a PR as the bot.
       bot issue <gh issue args>    Create an issue as the bot.
+      bot comment <gh issue comment args>  Comment on an issue/PR as the bot.
+      bot edit  <gh issue edit args>       Edit an issue (body/labels/etc.) as the bot.
       bot whoami                   Show bot identity, token cache state, and current repo identity.
 
 .EXAMPLE
@@ -27,7 +29,7 @@
 #>
 param(
     [Parameter(Mandatory, Position = 0)]
-    [ValidateSet('commit', 'push', 'pr', 'issue', 'whoami')]
+    [ValidateSet('commit', 'push', 'pr', 'issue', 'comment', 'edit', 'whoami')]
     [string]$Action,
 
     [Parameter(ValueFromRemainingArguments = $true)]
@@ -76,6 +78,18 @@ switch ($Action) {
     'issue' {
         $env:GH_TOKEN = Get-BotToken
         gh issue create @Rest
+        exit $LASTEXITCODE
+    }
+
+    'comment' {
+        $env:GH_TOKEN = Get-BotToken
+        gh issue comment @Rest
+        exit $LASTEXITCODE
+    }
+
+    'edit' {
+        $env:GH_TOKEN = Get-BotToken
+        gh issue edit @Rest
         exit $LASTEXITCODE
     }
 
