@@ -2,7 +2,7 @@ services:
   postgres:
     image: postgres:${POSTGRES_VERSION:-17}
     environment:
-      POSTGRES_USER: booking
+      POSTGRES_USER: ${POSTGRES_USER:-booking}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-booking123}
       POSTGRES_DB: booking
     ports:

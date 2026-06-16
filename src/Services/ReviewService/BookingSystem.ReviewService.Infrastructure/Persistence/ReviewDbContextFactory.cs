@@ -1,16 +1,9 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
+using BookingSystem.Shared.CrossCutting.Configuration;
 
 namespace BookingSystem.ReviewService.Infrastructure.Persistence;
 
-public class ReviewDbContextFactory : IDesignTimeDbContextFactory<ReviewDbContext>
+public class ReviewDbContextFactory : DesignTimeDbContextFactoryBase<ReviewDbContext>
 {
-    public ReviewDbContext CreateDbContext(string[] args)
-    {
-        var options = new DbContextOptionsBuilder<ReviewDbContext>()
-            .UseNpgsql("reviewdb")
-            .Options;
-
-        return new ReviewDbContext(options);
-    }
+    protected override string ConnectionName => "reviewdb";
+    protected override string ApiProjectName => "BookingSystem.ReviewService.Api";
 }

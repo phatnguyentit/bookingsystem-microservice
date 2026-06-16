@@ -1,16 +1,9 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
+using BookingSystem.Shared.CrossCutting.Configuration;
 
 namespace BookingSystem.NotificationService.Infrastructure.Persistence;
 
-public class NotifDbContextFactory : IDesignTimeDbContextFactory<NotifDbContext>
+public class NotifDbContextFactory : DesignTimeDbContextFactoryBase<NotifDbContext>
 {
-    public NotifDbContext CreateDbContext(string[] args)
-    {
-        var options = new DbContextOptionsBuilder<NotifDbContext>()
-            .UseNpgsql("notifdb")
-            .Options;
-
-        return new NotifDbContext(options);
-    }
+    protected override string ConnectionName => "notifdb";
+    protected override string ApiProjectName => "BookingSystem.NotificationService.Api";
 }

@@ -49,6 +49,8 @@ dotnet ef migrations add <Name> --project src/Services/<ServiceName>/BookingSyst
 dotnet ef database update       --project src/Services/<ServiceName>/BookingSystem.<ServiceName>Service.Infrastructure
 ```
 
+At design time the `{Name}DbContextFactory` resolves its connection string via `DesignTimeConnectionString.Resolve(...)` from `Shared.CrossCutting`: the Aspire-injected `ConnectionStrings__{name}db` env var if present, otherwise the `ConnectionStrings:{name}db` entry in the API project's `appsettings.json` (local docker-compose Postgres). So start infra first: `docker compose -f docker/docker-compose.infra.yml up -d`.
+
 Auto-migration at startup is controlled by `RunMigrationsOnStartup` in each service's `appsettings.json`.
 
 ## Service map

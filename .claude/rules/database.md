@@ -102,12 +102,14 @@ public class BookingDbContextFactory : IDesignTimeDbContextFactory<BookingDbCont
     public BookingDbContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<BookingDbContext>()
-            .UseNpgsql("connection string from aspire setup")
+            .UseNpgsql(DesignTimeConnectionString.Resolve("bookingdb", "BookingSystem.BookingService.Api"))
             .Options;
         return new BookingDbContext(options);
     }
 }
 ```
+
+`DesignTimeConnectionString.Resolve` (in `BookingSystem.Shared.CrossCutting`, referenced by every Infrastructure project) resolves the connection string in priority order: the `ConnectionStrings__{name}` environment variable Aspire injects, then the `ConnectionStrings:{name}` entry in the API project's `appsettings.json` (the local docker-compose Postgres). It throws if neither is present. Because the fallback targets `localhost:5432`, bring infra up first (`docker compose -f docker/docker-compose.infra.yml up -d`) before running `dotnet ef`.
 
 Run migrations from the Infrastructure project (not the Api project):
 

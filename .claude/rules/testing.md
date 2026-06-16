@@ -68,7 +68,7 @@ public class CreateUserHandlerTests
 
 ## Integration tests
 
-Use `Testcontainers` for real Postgres. Spin up an `IDesignTimeDbContextFactory` instance, run migrations, seed data, then exercise repository or handler logic.
+Use `Testcontainers` for real Postgres. Build the `DbContext` directly with the container's connection string — the design-time `IDesignTimeDbContextFactory` ignores its `args` and resolves from the Aspire env var / API `appsettings.json`, so it is not suitable for tests. Run migrations, seed data, then exercise repository or handler logic.
 
 ```csharp
 public class BookingRepositoryTests : IAsyncLifetime
@@ -78,7 +78,10 @@ public class BookingRepositoryTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         await _postgres.StartAsync();
-        var ctx = new BookingDbContextFactory().CreateDbContext([_postgres.GetConnectionString()]);
+        var options = new DbContextOptionsBuilder<BookingDbContext>()
+            .UseNpgsql(_postgres.GetConnectionString())
+            .Options;
+        var ctx = new BookingDbContext(options);
         await ctx.Database.MigrateAsync();
     }
 }

@@ -20,5 +20,6 @@
     <ProjectReference Include="../BookingSystem.BookingService.Application/BookingSystem.BookingService.Application.csproj" />
     <ProjectReference Include="../../../Shared/BookingSystem.Shared.Messaging/BookingSystem.Shared.Messaging.csproj" />
     <ProjectReference Include="../../../Shared/BookingSystem.Shared.Persistence/BookingSystem.Shared.Persistence.csproj" />
+    <ProjectReference Include="../../../Shared/BookingSystem.Shared.CrossCutting/BookingSystem.Shared.CrossCutting.csproj" />
   </ItemGroup>
 </Project>

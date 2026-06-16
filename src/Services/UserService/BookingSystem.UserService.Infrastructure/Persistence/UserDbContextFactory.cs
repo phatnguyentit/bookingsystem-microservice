@@ -1,16 +1,9 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
+using BookingSystem.Shared.CrossCutting.Configuration;
 
 namespace BookingSystem.UserService.Infrastructure.Persistence;
 
-public class UserDbContextFactory : IDesignTimeDbContextFactory<UserDbContext>
+public class UserDbContextFactory : DesignTimeDbContextFactoryBase<UserDbContext>
 {
-    public UserDbContext CreateDbContext(string[] args)
-    {
-        var options = new DbContextOptionsBuilder<UserDbContext>()
-            .UseNpgsql("userdb")
-            .Options;
-
-        return new UserDbContext(options);
-    }
+    protected override string ConnectionName => "userdb";
+    protected override string ApiProjectName => "BookingSystem.UserService.Api";
 }
