@@ -17,5 +17,6 @@
 
   <ItemGroup>
     <ProjectReference Include="../../../Shared/BookingSystem.Shared.Persistence/BookingSystem.Shared.Persistence.csproj" />
+    <ProjectReference Include="../../../Shared/BookingSystem.Shared.CrossCutting/BookingSystem.Shared.CrossCutting.csproj" />
   </ItemGroup>
 </Project>

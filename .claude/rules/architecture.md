@@ -31,6 +31,7 @@ BookingSystem.{Name}Service.Infrastructure/ ← Persistence/, Repositories/
 | Project | Purpose | What goes here |
 |---|---|---|
 | `Shared.Contracts` | Cross-service data shapes | Integration event records, DTOs shared by multiple services |
+| `Shared.CrossCutting` | Cross-cutting helpers | `DesignTimeConnectionString.Resolve(...)` — EF design-time connection-string resolution (Aspire env var → API `appsettings.json`) |
 | `Shared.Messaging` | Kafka abstraction | `IEventPublisher`, `KafkaEventPublisher`, `KafkaConsumerBase<T>`, `KafkaServerSettings` |
 | `Shared.Persistence` | EF helpers | `MigrateWithRetryAsync` extension only |
 | `ServiceDefaults` | Aspire defaults | `AddServiceDefaults()` — OTel, health checks, service discovery, resilience |
@@ -56,4 +57,5 @@ All infrastructure (Postgres, Redis, Kafka, Elasticsearch) and all service proje
 3. Register `AddNpgsqlDbContext<{Name}DbContext>("{name}db")`.
 4. Add the service and its database to `AppHost/Program.cs`.
 5. Add a YARP route + cluster entry in `ApiGateway/appsettings.json`.
-6. Create an `IDesignTimeDbContextFactory<{Name}DbContext>` in the Infrastructure project for `dotnet ef` CLI support.
+6. Create an `IDesignTimeDbContextFactory<{Name}DbContext>` in the Infrastructure project for `dotnet ef` CLI support: reference `Shared.CrossCutting` and resolve the connection string with `DesignTimeConnectionString.Resolve("{name}db", "BookingSystem.{Name}Service.Api")`.
+7. Add a `ConnectionStrings:{name}db` entry (the local docker-compose Postgres) to the API `appsettings.json` — this is the design-time/standalone fallback when Aspire is not injecting the connection string.

@@ -19,6 +19,8 @@ BookingSystem.UserService.Api/
 BookingSystem.UserService.Infrastructure/
 └── Persistence/
     ├── UserDbContext.cs           ← User entity defined here
+    ├── UserDbContextFactory.cs    ← IDesignTimeDbContextFactory for dotnet ef
+    ├── Migrations/
     └── Repositories/
         ├── IUserRepository.cs
         └── UserRepository.cs
@@ -39,7 +41,7 @@ public class User
 }
 ```
 
-Table name: `users`. Configuration is inline in `OnModelCreating`.
+Table name: `users`; columns mapped to `snake_case` (`full_name`, `password_hash`, `created_at`). Configuration is inline in `OnModelCreating`.
 
 ## Repository
 
@@ -86,7 +88,7 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Progr
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 ```
 
-No `RunMigrationsOnStartup` block — no migrations directory yet.
+Has a `RunMigrationsOnStartup` block using `MigrateWithRetryAsync` (set to `true` in `appsettings.json`).
 
 ## How BookingService uses this service
 
@@ -94,6 +96,5 @@ No `RunMigrationsOnStartup` block — no migrations directory yet.
 
 ## Gaps
 
-- No migration (schema created via EF on first run or manual `dotnet ef`)
 - No email uniqueness check at the command layer (DB has a unique index; violation surfaces as an exception)
 - No profile update or password change endpoint
