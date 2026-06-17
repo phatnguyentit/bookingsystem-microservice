@@ -5,12 +5,10 @@ using MediatR;
 
 namespace BookingSystem.BookingService.Application.EventHandlers;
 
-public class PublishBookingCreatedHandler(IEventPublisher publisher)
-    : INotificationHandler<BookingCreatedEvent>
+public class PublishBookingCreatedHandler(IEventPublisher publisher) : INotificationHandler<BookingCreatedEvent>
 {
     public Task Handle(BookingCreatedEvent notification, CancellationToken cancellationToken)
-        => publisher.PublishAsync("booking.created",
-            new BookingCreatedIntegrationEvent(
+        => publisher.PublishAsync(KafkaTopics.BookingCreated, new BookingCreatedIntegrationEvent(
                 notification.BookingId.Value,
                 notification.UserId.Value,
                 notification.CatalogId.Value,
@@ -21,11 +19,10 @@ public class PublishBookingCreatedHandler(IEventPublisher publisher)
                 DateTime.UtcNow), cancellationToken);
 }
 
-public class PublishBookingCancelledHandler(IEventPublisher publisher)
-    : INotificationHandler<BookingCancelledEvent>
+public class PublishBookingCancelledHandler(IEventPublisher publisher) : INotificationHandler<BookingCancelledEvent>
 {
     public Task Handle(BookingCancelledEvent notification, CancellationToken cancellationToken)
-        => publisher.PublishAsync("booking.cancelled",
+        => publisher.PublishAsync(KafkaTopics.BookingCancelled,
             new BookingCancelledIntegrationEvent(
                 notification.BookingId.Value,
                 notification.UserId.Value,

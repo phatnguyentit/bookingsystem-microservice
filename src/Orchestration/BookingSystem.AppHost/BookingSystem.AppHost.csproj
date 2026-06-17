@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../Shared/BookingSystem.Shared.Contracts/BookingSystem.Shared.Contracts.csproj" IsAspireProjectResource="false" />
     <ProjectReference Include="../../Gateway/BookingSystem.ApiGateway/BookingSystem.ApiGateway.csproj" />
     <ProjectReference Include="../../Services/UserService/BookingSystem.UserService.Api/BookingSystem.UserService.Api.csproj" />
     <ProjectReference Include="../../Services/CatalogService/BookingSystem.CatalogService.Api/BookingSystem.CatalogService.Api.csproj" />

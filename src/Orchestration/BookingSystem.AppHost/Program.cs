@@ -1,4 +1,5 @@
 using BookingSystem.AppHost;
+using BookingSystem.Shared.Contracts.Events;
 using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 
@@ -34,10 +35,10 @@ builder.Eventing.Subscribe<ResourceReadyEvent>(kafka.Resource, async (@event, ct
 
     var topics = new[]
     {
-        "booking.created",
-        "booking.cancelled",
-        "payment.succeeded",
-        "payment.failed",
+        KafkaTopics.BookingCreated,
+        KafkaTopics.BookingCancelled,
+        KafkaTopics.PaymentSucceeded,
+        KafkaTopics.PaymentFailed,
     };
 
     try

@@ -10,8 +10,6 @@ public record BookingCreatedEvent(
     DateRange Period,
     Money TotalPrice) : IDomainEvent
 {
-    public static BookingCreatedEvent Create(
-        BookingId bookingId, UserId userId, CatalogId catalogId,
-        DateRange period, Money totalPrice)
+    public static BookingCreatedEvent Create(BookingId bookingId, UserId userId, CatalogId catalogId, DateRange period, Money totalPrice)
         => new(bookingId, userId, catalogId, period, totalPrice);
 }

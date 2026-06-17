@@ -11,7 +11,7 @@ public class BookingCreatedPaymentConsumer(
     ILogger<BookingCreatedPaymentConsumer> logger,
     IServiceScopeFactory scopeFactory)
     : KafkaConsumerBase<BookingCreatedIntegrationEvent>(
-        "booking.created", "payment-service-booking.created", kafkaSettings, logger)
+        KafkaTopics.BookingCreated, $"payment-service-{KafkaTopics.BookingCreated}", kafkaSettings, logger)
 {
     protected override async Task ProcessAsync(BookingCreatedIntegrationEvent message, CancellationToken cancellationToken)
     {

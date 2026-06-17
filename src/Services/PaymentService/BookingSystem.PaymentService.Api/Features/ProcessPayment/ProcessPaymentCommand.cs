@@ -36,7 +36,7 @@ public class ProcessPaymentHandler(
 
             await repo.AddAsync(payment, cancellationToken);
 
-            await publisher.PublishAsync("payment.succeeded",
+            await publisher.PublishAsync(KafkaTopics.PaymentSucceeded,
                 new PaymentSucceededIntegrationEvent(
                     payment.Id.Value,
                     payment.BookingId,
@@ -49,7 +49,7 @@ public class ProcessPaymentHandler(
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            await publisher.PublishAsync("payment.failed",
+            await publisher.PublishAsync(KafkaTopics.PaymentFailed,
                 new PaymentFailedIntegrationEvent(
                     paymentId.Value,
                     cmd.BookingId,
