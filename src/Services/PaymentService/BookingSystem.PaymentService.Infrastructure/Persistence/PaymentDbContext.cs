@@ -1,3 +1,4 @@
+using BookingSystem.PaymentService.Infrastructure.Outbox;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookingSystem.PaymentService.Infrastructure.Persistence;
@@ -16,6 +17,7 @@ public class Payment
 public class PaymentDbContext(DbContextOptions<PaymentDbContext> options) : DbContext(options)
 {
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -28,6 +30,18 @@ public class PaymentDbContext(DbContextOptions<PaymentDbContext> options) : DbCo
             e.Property(p => p.Currency).HasMaxLength(3);
             e.Property(p => p.Status).HasMaxLength(20);
             e.ToTable("payments");
+        });
+
+        mb.Entity<OutboxMessage>(e =>
+        {
+            e.HasKey(m => m.Id);
+            e.Property(m => m.Topic).IsRequired().HasMaxLength(200);
+            e.Property(m => m.EventType).IsRequired().HasMaxLength(500);
+            e.Property(m => m.Payload).IsRequired();
+            e.Property(m => m.Error).HasMaxLength(2000);
+            // index for the background processor query: unprocessed messages ordered by creation
+            e.HasIndex(m => new { m.ProcessedAt, m.CreatedAt });
+            e.ToTable("outbox_messages");
         });
     }
 }

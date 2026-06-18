@@ -1,5 +1,7 @@
 using BookingSystem.PaymentService.Api.Consumers;
 using BookingSystem.PaymentService.Api.Endpoints;
+using BookingSystem.PaymentService.Api.Outbox;
+using BookingSystem.PaymentService.Infrastructure.Gateway;
 using BookingSystem.PaymentService.Infrastructure.Persistence;
 using BookingSystem.ServiceDefaults;
 using BookingSystem.Shared.Messaging;
@@ -17,6 +19,10 @@ builder.Services.AddKafkaMessaging(builder.Configuration);
 
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddHostedService<BookingCreatedPaymentConsumer>();
+builder.Services.AddHostedService<PaymentOutboxProcessor>();
+
+// Mocks
+builder.Services.AddScoped<IPaymentGateway, MockPaymentGateway>();
 
 var app = builder.Build();
 

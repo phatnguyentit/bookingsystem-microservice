@@ -1,3 +1,4 @@
+using BookingSystem.PaymentService.Infrastructure.Outbox;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookingSystem.PaymentService.Infrastructure.Persistence;
@@ -12,4 +13,10 @@ public class PaymentRepository(PaymentDbContext db) : IPaymentRepository
         await db.Payments.AddAsync(payment, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
     }
+
+    public void AddOutboxMessage(OutboxMessage message)
+        => db.OutboxMessages.Add(message);
+
+    public Task SaveChangesAsync(CancellationToken cancellationToken = default)
+        => db.SaveChangesAsync(cancellationToken);
 }
