@@ -42,7 +42,7 @@ public class ElasticsearchService(ElasticsearchClient client) : ISearchService
         var from = (page - 1) * pageSize;
 
         var response = await client.SearchAsync<ListingDocument>(s => s
-            .Index(IndexName)
+            .Indices(IndexName)
             .From(from)
             .Size(pageSize)
             .Query(q =>
