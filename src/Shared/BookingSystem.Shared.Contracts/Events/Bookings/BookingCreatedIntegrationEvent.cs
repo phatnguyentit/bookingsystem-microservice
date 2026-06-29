@@ -1,4 +1,4 @@
-namespace BookingSystem.Shared.Contracts.Events;
+namespace BookingSystem.Shared.Contracts.Events.Bookings;
 
 public record BookingCreatedIntegrationEvent(
     Guid BookingId,
@@ -8,4 +8,4 @@ public record BookingCreatedIntegrationEvent(
     DateOnly CheckOut,
     decimal Amount,
     string Currency,
-    DateTime OccurredAt);
+    DateTimeOffset OccurredAt);

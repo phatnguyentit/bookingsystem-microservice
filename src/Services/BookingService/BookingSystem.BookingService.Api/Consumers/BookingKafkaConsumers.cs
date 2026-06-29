@@ -1,6 +1,7 @@
 using BookingSystem.BookingService.Application.Commands.CancelBooking;
 using BookingSystem.BookingService.Application.Commands.ConfirmBooking;
 using BookingSystem.Shared.Contracts.Events;
+using BookingSystem.Shared.Contracts.Events.Payments;
 using BookingSystem.Shared.Messaging;
 using MediatR;
 using Microsoft.Extensions.Options;

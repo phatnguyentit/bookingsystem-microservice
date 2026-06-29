@@ -1,4 +1,4 @@
-namespace BookingSystem.Shared.Contracts.Events;
+namespace BookingSystem.Shared.Contracts.Events.Payments;
 
 /// <summary>
 /// A captured payment could not be refunded automatically (the gateway permanently declined).
@@ -11,4 +11,4 @@ public record PaymentRefundFailedIntegrationEvent(
     decimal Amount,
     string Currency,
     string Reason,
-    DateTime OccurredAt);
+    DateTimeOffset OccurredAt);

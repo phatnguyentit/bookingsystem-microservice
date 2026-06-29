@@ -1,5 +1,7 @@
 using BookingSystem.NotificationService.Infrastructure.Services;
 using BookingSystem.Shared.Contracts.Events;
+using BookingSystem.Shared.Contracts.Events.Bookings;
+using BookingSystem.Shared.Contracts.Events.Payments;
 using BookingSystem.Shared.Messaging;
 using Microsoft.Extensions.Options;
 

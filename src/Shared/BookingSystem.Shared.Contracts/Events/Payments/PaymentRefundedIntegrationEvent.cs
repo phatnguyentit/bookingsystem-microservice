@@ -1,4 +1,4 @@
-namespace BookingSystem.Shared.Contracts.Events;
+namespace BookingSystem.Shared.Contracts.Events.Payments;
 
 public record PaymentRefundedIntegrationEvent(
     Guid PaymentId,
@@ -7,4 +7,4 @@ public record PaymentRefundedIntegrationEvent(
     decimal Amount,
     string Currency,
     string Reason,
-    DateTime OccurredAt);
+    DateTimeOffset OccurredAt);

@@ -1,5 +1,6 @@
 using BookingSystem.BookingService.Domain.Events;
 using BookingSystem.Shared.Contracts.Events;
+using BookingSystem.Shared.Contracts.Events.Bookings;
 using BookingSystem.Shared.Messaging;
 using MediatR;
 
@@ -16,7 +17,7 @@ public class PublishBookingCreatedHandler(IEventPublisher publisher) : INotifica
                 notification.Period.CheckOut,
                 notification.TotalPrice.Amount,
                 notification.TotalPrice.Currency,
-                DateTime.UtcNow), cancellationToken);
+                DateTimeOffset.UtcNow), cancellationToken);
 }
 
 public class PublishBookingCancelledHandler(IEventPublisher publisher) : INotificationHandler<BookingCancelledEvent>
@@ -28,7 +29,7 @@ public class PublishBookingCancelledHandler(IEventPublisher publisher) : INotifi
                 notification.UserId.Value,
                 notification.CatalogId.Value,
                 notification.Reason,
-                DateTime.UtcNow), cancellationToken);
+                DateTimeOffset.UtcNow), cancellationToken);
 }
 
 public class PublishBookingConfirmationFailedHandler(IEventPublisher publisher) : INotificationHandler<BookingConfirmationFailedEvent>
@@ -39,5 +40,5 @@ public class PublishBookingConfirmationFailedHandler(IEventPublisher publisher) 
                 notification.BookingId.Value,
                 notification.UserId.Value,
                 notification.Reason,
-                DateTime.UtcNow), cancellationToken);
+                DateTimeOffset.UtcNow), cancellationToken);
 }

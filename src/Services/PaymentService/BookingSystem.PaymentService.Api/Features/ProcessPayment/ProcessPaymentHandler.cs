@@ -2,6 +2,7 @@ using BookingSystem.PaymentService.Infrastructure.Gateway;
 using BookingSystem.PaymentService.Infrastructure.Outbox;
 using BookingSystem.PaymentService.Infrastructure.Persistence;
 using BookingSystem.Shared.Contracts.Events;
+using BookingSystem.Shared.Contracts.Events.Payments;
 using MediatR;
 
 namespace BookingSystem.PaymentService.Api.Features.ProcessPayment;
@@ -58,7 +59,7 @@ public class ProcessPaymentHandler(IPaymentRepository repo, IPaymentGateway gate
         payment.Status = PaymentStatus.Succeeded;
         repo.AddOutboxMessage(OutboxMessage.For(KafkaTopics.PaymentSucceeded, new PaymentSucceededIntegrationEvent(
                 payment.Id.Value, payment.BookingId, payment.UserId,
-                payment.Amount, payment.Currency, DateTime.UtcNow)));
+                payment.Amount, payment.Currency, DateTimeOffset.UtcNow)));
                 
         await repo.SaveChangesAsync(cancellationToken);
     }
@@ -68,7 +69,7 @@ public class ProcessPaymentHandler(IPaymentRepository repo, IPaymentGateway gate
         payment.Status = PaymentStatus.Failed;
         repo.AddOutboxMessage(OutboxMessage.For(KafkaTopics.PaymentFailed, new PaymentFailedIntegrationEvent(
                 payment.Id.Value, payment.BookingId, payment.UserId,
-                reason, DateTime.UtcNow)));
+                reason, DateTimeOffset.UtcNow)));
 
         await repo.SaveChangesAsync(cancellationToken);
     }

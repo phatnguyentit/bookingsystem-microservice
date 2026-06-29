@@ -1,6 +1,7 @@
 using BookingSystem.PaymentService.Api.Features.ProcessPayment;
 using BookingSystem.PaymentService.Api.Features.RefundPayment;
 using BookingSystem.Shared.Contracts.Events;
+using BookingSystem.Shared.Contracts.Events.Bookings;
 using BookingSystem.Shared.Messaging;
 using MediatR;
 using Microsoft.Extensions.Options;

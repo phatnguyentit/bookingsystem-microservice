@@ -2,6 +2,7 @@ using BookingSystem.PaymentService.Infrastructure.Gateway;
 using BookingSystem.PaymentService.Infrastructure.Outbox;
 using BookingSystem.PaymentService.Infrastructure.Persistence;
 using BookingSystem.Shared.Contracts.Events;
+using BookingSystem.Shared.Contracts.Events.Payments;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookingSystem.PaymentService.Api.Refunds;
@@ -82,7 +83,7 @@ public class RefundProcessor(
                     db.OutboxMessages.Add(OutboxMessage.For(KafkaTopics.PaymentRefundFailed, new PaymentRefundFailedIntegrationEvent(
                         payment.Id.Value, payment.BookingId, payment.UserId,
                         payment.Amount, payment.Currency,
-                        result.FailureReason ?? "Refund was declined.", DateTime.UtcNow)));
+                        result.FailureReason ?? "Refund was declined.", DateTimeOffset.UtcNow)));
                     _transientAttempts.Remove(payment.Id.Value);
 
                     // TODO(metrics): emit an OpenTelemetry counter (payments.refund.failed) here so

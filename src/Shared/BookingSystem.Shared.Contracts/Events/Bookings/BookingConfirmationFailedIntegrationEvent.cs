@@ -1,7 +1,7 @@
-namespace BookingSystem.Shared.Contracts.Events;
+namespace BookingSystem.Shared.Contracts.Events.Bookings;
 
 public record BookingConfirmationFailedIntegrationEvent(
     Guid BookingId,
     Guid UserId,
     string Reason,
-    DateTime OccurredAt);
+    DateTimeOffset OccurredAt);

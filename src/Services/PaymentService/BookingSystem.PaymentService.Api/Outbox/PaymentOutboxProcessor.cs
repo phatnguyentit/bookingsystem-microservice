@@ -1,6 +1,6 @@
 using BookingSystem.PaymentService.Infrastructure.Outbox;
 using BookingSystem.PaymentService.Infrastructure.Persistence;
-using BookingSystem.Shared.Contracts.Events;
+using BookingSystem.Shared.Contracts.Events.Payments;
 using BookingSystem.Shared.Messaging;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
