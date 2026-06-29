@@ -7,6 +7,9 @@ namespace BookingSystem.PaymentService.Infrastructure.Gateway;
 public interface IPaymentGateway
 {
     Task<PaymentGatewayResult> ChargeAsync(PaymentChargeRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Reverses a previously captured charge. Used by the saga compensation (refund) path.</summary>
+    Task<PaymentGatewayResult> RefundAsync(PaymentRefundRequest request, CancellationToken cancellationToken = default);
 }
 
 /// <param name="IdempotencyKey">
@@ -20,6 +23,17 @@ public record PaymentChargeRequest(
     decimal Amount,
     string Currency,
     string PaymentMethod);
+
+/// <param name="IdempotencyKey">
+/// Stable key (the PaymentId) the gateway uses to de-duplicate retried refunds, so replaying
+/// the same compensation after a crash never refunds twice.
+/// </param>
+public record PaymentRefundRequest(
+    string IdempotencyKey,
+    Guid BookingId,
+    decimal Amount,
+    string Currency,
+    string Reason);
 
 public record PaymentGatewayResult(bool Success, string? Reference, string? FailureReason)
 {

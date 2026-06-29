@@ -6,6 +6,13 @@ public interface IPaymentRepository
 {
     Task<Payment?> GetByIdAsync(PaymentId id, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Returns the captured payment for a booking (status <c>Succeeded</c> or already <c>Refunded</c>),
+    /// most recent first. Used by the refund/compensation path. Returns null when no captured
+    /// payment exists for the booking.
+    /// </summary>
+    Task<Payment?> GetCapturedByBookingIdAsync(Guid bookingId, CancellationToken cancellationToken = default);
+
     /// <summary>Inserts the payment and commits immediately — records the in-flight attempt.</summary>
     Task AddAsync(Payment payment, CancellationToken cancellationToken = default);
 

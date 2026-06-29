@@ -84,6 +84,12 @@ public class PaymentOutboxProcessor(
             nameof(PaymentFailedIntegrationEvent) => publisher.PublishAsync(
                 message.Topic,
                 JsonSerializer.Deserialize<PaymentFailedIntegrationEvent>(message.Payload)!, ct),
+            nameof(PaymentRefundedIntegrationEvent) => publisher.PublishAsync(
+                message.Topic,
+                JsonSerializer.Deserialize<PaymentRefundedIntegrationEvent>(message.Payload)!, ct),
+            nameof(PaymentRefundFailedIntegrationEvent) => publisher.PublishAsync(
+                message.Topic,
+                JsonSerializer.Deserialize<PaymentRefundFailedIntegrationEvent>(message.Payload)!, ct),
             _ => throw new InvalidOperationException($"Unknown outbox event type '{message.EventType}'.")
         };
 }

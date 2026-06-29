@@ -40,6 +40,8 @@ builder.Eventing.Subscribe<ResourceReadyEvent>(kafka.Resource, async (@event, ct
         KafkaTopics.BookingConfirmationFailed,
         KafkaTopics.PaymentSucceeded,
         KafkaTopics.PaymentFailed,
+        KafkaTopics.PaymentRefunded,
+        KafkaTopics.PaymentRefundFailed,
     };
 
     // A matching ".dlq" dead-letter topic for each — consumers (KafkaConsumerBase) park

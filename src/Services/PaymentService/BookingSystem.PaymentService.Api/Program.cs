@@ -1,6 +1,7 @@
 using BookingSystem.PaymentService.Api.Consumers;
 using BookingSystem.PaymentService.Api.Endpoints;
 using BookingSystem.PaymentService.Api.Outbox;
+using BookingSystem.PaymentService.Api.Refunds;
 using BookingSystem.PaymentService.Infrastructure.Gateway;
 using BookingSystem.PaymentService.Infrastructure.Persistence;
 using BookingSystem.ServiceDefaults;
@@ -19,7 +20,9 @@ builder.Services.AddKafkaMessaging(builder.Configuration);
 
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddHostedService<BookingCreatedPaymentConsumer>();
+builder.Services.AddHostedService<BookingConfirmationFailedPaymentConsumer>();
 builder.Services.AddHostedService<PaymentOutboxProcessor>();
+builder.Services.AddHostedService<RefundProcessor>();
 
 // Mocks
 builder.Services.AddScoped<IPaymentGateway, MockPaymentGateway>();

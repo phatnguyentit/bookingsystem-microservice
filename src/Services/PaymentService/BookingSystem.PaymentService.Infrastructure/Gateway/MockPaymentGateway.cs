@@ -17,4 +17,13 @@ public class MockPaymentGateway(ILogger<MockPaymentGateway> logger) : IPaymentGa
 
         return Task.FromResult(PaymentGatewayResult.Approved($"mock-{request.IdempotencyKey}"));
     }
+
+    public Task<PaymentGatewayResult> RefundAsync(PaymentRefundRequest request, CancellationToken cancellationToken = default)
+    {
+        logger.LogInformation(
+            "Mock gateway refunding {Amount} {Currency} for booking {BookingId} (idempotency key {Key}); reason: {Reason}",
+            request.Amount, request.Currency, request.BookingId, request.IdempotencyKey, request.Reason);
+
+        return Task.FromResult(PaymentGatewayResult.Approved($"refund-{request.IdempotencyKey}"));
+    }
 }
