@@ -33,13 +33,19 @@ builder.Eventing.Subscribe<ResourceReadyEvent>(kafka.Resource, async (@event, ct
 
     using var admin = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build();
 
-    var topics = new[]
+    var businessPublishingTopics = new[]
     {
         KafkaTopics.BookingCreated,
         KafkaTopics.BookingCancelled,
         KafkaTopics.PaymentSucceeded,
         KafkaTopics.PaymentFailed,
     };
+
+    // A matching ".dlq" dead-letter topic for each — consumers (KafkaConsumerBase) park
+    // messages here after retries are exhausted. Keep the suffix in sync with that class.
+    var topics = businessPublishingTopics
+        .Concat(businessPublishingTopics.Select(name => $"{name}.dlq"))
+        .ToArray();
 
     try
     {
