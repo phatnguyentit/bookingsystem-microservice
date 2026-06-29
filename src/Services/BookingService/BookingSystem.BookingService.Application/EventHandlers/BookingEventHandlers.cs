@@ -30,3 +30,14 @@ public class PublishBookingCancelledHandler(IEventPublisher publisher) : INotifi
                 notification.Reason,
                 DateTime.UtcNow), cancellationToken);
 }
+
+public class PublishBookingConfirmationFailedHandler(IEventPublisher publisher) : INotificationHandler<BookingConfirmationFailedEvent>
+{
+    public Task Handle(BookingConfirmationFailedEvent notification, CancellationToken cancellationToken)
+        => publisher.PublishAsync(KafkaTopics.BookingConfirmationFailed,
+            new BookingConfirmationFailedIntegrationEvent(
+                notification.BookingId.Value,
+                notification.UserId.Value,
+                notification.Reason,
+                DateTime.UtcNow), cancellationToken);
+}

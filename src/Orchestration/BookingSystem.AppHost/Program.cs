@@ -37,6 +37,7 @@ builder.Eventing.Subscribe<ResourceReadyEvent>(kafka.Resource, async (@event, ct
     {
         KafkaTopics.BookingCreated,
         KafkaTopics.BookingCancelled,
+        KafkaTopics.BookingConfirmationFailed,
         KafkaTopics.PaymentSucceeded,
         KafkaTopics.PaymentFailed,
     };

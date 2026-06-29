@@ -42,6 +42,12 @@ public class Booking : AggregateRoot<BookingId>
         AddDomainEvent(BookingConfirmedEvent.Create(Id));
     }
 
+    // Records that a captured payment could not be confirmed against this booking. Intentionally
+    // does not change Status — the booking stays in its terminal state; this only raises a
+    // compensation event so a downstream refund/cleanup can be choreographed via the outbox.
+    public void RejectConfirmation(string reason)
+        => AddDomainEvent(BookingConfirmationFailedEvent.Create(Id, UserId, reason));
+
     public void Cancel(string reason)
     {
         if (Status == BookingStatus.Cancelled)
