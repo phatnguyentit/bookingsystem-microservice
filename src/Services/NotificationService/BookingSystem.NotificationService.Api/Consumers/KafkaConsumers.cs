@@ -1,5 +1,7 @@
 using BookingSystem.NotificationService.Infrastructure.Services;
 using BookingSystem.Shared.Contracts.Events;
+using BookingSystem.Shared.Contracts.Events.Bookings;
+using BookingSystem.Shared.Contracts.Events.Payments;
 using BookingSystem.Shared.Messaging;
 using Microsoft.Extensions.Options;
 
@@ -10,7 +12,7 @@ public class BookingCreatedKafkaConsumer(
     ILogger<BookingCreatedKafkaConsumer> logger,
     IServiceScopeFactory scopeFactory)
     : KafkaConsumerBase<BookingCreatedIntegrationEvent>(
-        "booking.created", "notification-service-booking.created", kafkaSettings, logger)
+        KafkaTopics.BookingCreated, $"notification-service-{KafkaTopics.BookingCreated}", kafkaSettings, logger)
 {
     protected override async Task ProcessAsync(BookingCreatedIntegrationEvent message, CancellationToken cancellationToken)
     {
@@ -27,7 +29,7 @@ public class BookingCancelledKafkaConsumer(
     ILogger<BookingCancelledKafkaConsumer> logger,
     IServiceScopeFactory scopeFactory)
     : KafkaConsumerBase<BookingCancelledIntegrationEvent>(
-        "booking.cancelled", "notification-service-booking.cancelled", kafkaSettings, logger)
+        KafkaTopics.BookingCancelled, $"notification-service-{KafkaTopics.BookingCancelled}", kafkaSettings, logger)
 {
     protected override async Task ProcessAsync(BookingCancelledIntegrationEvent message, CancellationToken cancellationToken)
     {
@@ -44,7 +46,7 @@ public class PaymentSucceededKafkaConsumer(
     ILogger<PaymentSucceededKafkaConsumer> logger,
     IServiceScopeFactory scopeFactory)
     : KafkaConsumerBase<PaymentSucceededIntegrationEvent>(
-        "payment.succeeded", "notification-service-payment.succeeded", kafkaSettings, logger)
+        KafkaTopics.PaymentSucceeded, $"notification-service-{KafkaTopics.PaymentSucceeded}", kafkaSettings, logger)
 {
     protected override async Task ProcessAsync(
         PaymentSucceededIntegrationEvent message,
@@ -63,7 +65,7 @@ public class PaymentFailedKafkaConsumer(
     ILogger<PaymentFailedKafkaConsumer> logger,
     IServiceScopeFactory scopeFactory)
     : KafkaConsumerBase<PaymentFailedIntegrationEvent>(
-        "payment.failed", "notification-service-payment.failed", kafkaSettings, logger)
+        KafkaTopics.PaymentFailed, $"notification-service-{KafkaTopics.PaymentFailed}", kafkaSettings, logger)
 {
     protected override async Task ProcessAsync(
         PaymentFailedIntegrationEvent message,

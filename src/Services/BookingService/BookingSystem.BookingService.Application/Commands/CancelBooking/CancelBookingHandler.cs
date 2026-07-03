@@ -15,6 +15,11 @@ public class CancelBookingHandler(
         var booking = await bookingRepo.GetByIdAsync(new BookingId(cmd.BookingId), cancellationToken)
             ?? throw new NotFoundException($"Booking {cmd.BookingId} not found.");
 
+        // Idempotent: payment.failed is at-least-once, so a redelivery on an already-cancelled
+        // booking is the desired end state — treat it as success rather than throwing.
+        if (booking.Status == BookingStatus.Cancelled)
+            return;
+
         booking.Cancel(cmd.Reason);
         await unitOfWork.CommitAsync(cancellationToken);
     }

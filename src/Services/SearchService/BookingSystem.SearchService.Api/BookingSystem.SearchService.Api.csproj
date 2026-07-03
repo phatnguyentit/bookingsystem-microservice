@@ -7,9 +7,10 @@
 
   <ItemGroup>
     <PackageReference Include="Aspire.Elastic.Clients.Elasticsearch" Version="13.3.0" />
-    <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" Version="13.3.5" />
-    <PackageReference Include="Confluent.Kafka" Version="2.*" />
-    <PackageReference Include="MediatR" Version="12.*" />
+    <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" Version="13.4.6" />
+    <PackageReference Include="Confluent.Kafka" Version="2.14.2" />
+    <PackageReference Include="MediatR" Version="14.1.0" />
+    <PackageReference Include="MessagePack" Version="3.1.7" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,3 +1,6 @@
+using BookingSystem.Shared.Messaging;
+
 namespace BookingSystem.BookingService.Application.Exceptions;
 
-public class NotFoundException(string message) : Exception(message);
+// A missing aggregate is a permanent failure: redelivering the same event can never make it appear.
+public class NotFoundException(string message) : Exception(message), IPermanentMessageException;

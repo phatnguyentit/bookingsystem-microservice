@@ -34,8 +34,10 @@ Read for context first; never file an issue from a guess.
    ```
    **Known already-filed gaps** (skip these unless reopening/expanding — reference them
    instead): `#16` catalog/search filters & availability, `#17` review aggregate rating,
-   `#26` booking date amendment. Add new entries here as the bot files more, so future
-   runs short-circuit before searching.
+`   `#26` booking date amendment, `#35` BookingService user-exists validation in
+   `CreateBookingHandler` (unused `IUserServiceClient`), `#36` payment→booking saga
+   cross-service failure handling (consumer offset-on-failure, idempotency, compensation).
+   Add new entries here as the bot files more, so future runs short-circuit before searching.
 
 ## 2. Service map (quick reference)
 

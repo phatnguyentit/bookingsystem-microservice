@@ -707,7 +707,7 @@ public record BookingCreatedIntegrationEvent(
     DateOnly CheckOut,
     decimal Amount,
     string Currency,
-    DateTime OccurredAt);
+    DateTimeOffset OccurredAt);
 ```
 
 ### 6.2 Kafka Topics
@@ -769,7 +769,7 @@ public class PublishBookingCreatedHandler(IEventPublisher publisher)
                 notification.UserId.Value,
                 notification.ListingId.Value,
                 // ... map fields
-                DateTime.UtcNow), ct);
+                DateTimeOffset.UtcNow), ct);
 }
 
 // NotificationService consumer

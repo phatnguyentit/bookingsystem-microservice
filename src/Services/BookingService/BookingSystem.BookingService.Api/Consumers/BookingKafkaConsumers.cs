@@ -1,6 +1,7 @@
 using BookingSystem.BookingService.Application.Commands.CancelBooking;
 using BookingSystem.BookingService.Application.Commands.ConfirmBooking;
 using BookingSystem.Shared.Contracts.Events;
+using BookingSystem.Shared.Contracts.Events.Payments;
 using BookingSystem.Shared.Messaging;
 using MediatR;
 using Microsoft.Extensions.Options;
@@ -12,7 +13,7 @@ public class PaymentSucceededKafkaConsumer(
     ILogger<PaymentSucceededKafkaConsumer> logger,
     IServiceScopeFactory scopeFactory)
     : KafkaConsumerBase<PaymentSucceededIntegrationEvent>(
-        "payment.succeeded", "booking-service-payment.succeeded", kafkaSettings, logger)
+        KafkaTopics.PaymentSucceeded, $"booking-service-{KafkaTopics.PaymentSucceeded}", kafkaSettings, logger)
 {
     protected override async Task ProcessAsync(PaymentSucceededIntegrationEvent message, CancellationToken cancellationToken)
     {
@@ -27,7 +28,7 @@ public class PaymentFailedKafkaConsumer(
     ILogger<PaymentFailedKafkaConsumer> logger,
     IServiceScopeFactory scopeFactory)
     : KafkaConsumerBase<PaymentFailedIntegrationEvent>(
-        "payment.failed", "booking-service-payment.failed", kafkaSettings, logger)
+        KafkaTopics.PaymentFailed, $"booking-service-{KafkaTopics.PaymentFailed}", kafkaSettings, logger)
 {
     protected override async Task ProcessAsync(PaymentFailedIntegrationEvent message, CancellationToken cancellationToken)
     {

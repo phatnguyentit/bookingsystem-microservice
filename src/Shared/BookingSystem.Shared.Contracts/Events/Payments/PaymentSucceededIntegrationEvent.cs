@@ -1,4 +1,4 @@
-namespace BookingSystem.Shared.Contracts.Events;
+namespace BookingSystem.Shared.Contracts.Events.Payments;
 
 public record PaymentSucceededIntegrationEvent(
     Guid PaymentId,
@@ -6,4 +6,4 @@ public record PaymentSucceededIntegrationEvent(
     Guid UserId,
     decimal Amount,
     string Currency,
-    DateTime OccurredAt);
+    DateTimeOffset OccurredAt);
