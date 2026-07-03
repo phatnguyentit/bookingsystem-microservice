@@ -1,5 +1,6 @@
 [![.NET](https://github.com/phatnguyentit/bookingsystem-microservice/actions/workflows/dotnet.yml/badge.svg)](https://github.com/phatnguyentit/bookingsystem-microservice/actions/workflows/dotnet.yml)
 [![CodeQL Advanced](https://github.com/phatnguyentit/bookingsystem-microservice/actions/workflows/codeql.yml/badge.svg)](https://github.com/phatnguyentit/bookingsystem-microservice/actions/workflows/codeql.yml)
+[![Tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/phatnguyentit/3c5ef9cca029a25a961494cb73c9f22a/raw/bookingsystem-tests.json)](https://github.com/phatnguyentit/bookingsystem-microservice/actions/workflows/dotnet.yml)
 # Booking System Microservice
 
 A .NET 10 microservices booking platform demonstrating CQRS, DDD, Kafka event choreography, and distributed system patterns.

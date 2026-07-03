@@ -21,7 +21,9 @@ tests/
 └── {Service}.Integration.Tests/        ← Testcontainers (Postgres, Kafka, Redis) — not yet added
 ```
 
-Conventions: all projects target `net10.0`, use xUnit + FluentAssertions (pinned 7.x, the last Apache-2.0 release) + NSubstitute, declare `<Using Include="Xunit" />` (no `using Xunit;` needed in files), and are registered in **both** solutions: `BookingSystem.slnx` (everything) and `BookingSystem.Tests.slnx` (tests only — use `dotnet test BookingSystem.Tests.slnx` for a faster test-focused loop). Projects that reference an `*.Api` project also need `<FrameworkReference Include="Microsoft.AspNetCore.App" />`.
+Conventions: all projects target `net10.0`, use xUnit + FluentAssertions (pinned 7.x, the last Apache-2.0 release) + NSubstitute, declare `<Using Include="Xunit" />` (no `using Xunit;` needed in files). Projects that reference an `*.Api` project also need `<FrameworkReference Include="Microsoft.AspNetCore.App" />`.
+
+Solution split: `BookingSystem.slnx` contains **source projects only**; every test project is registered in `BookingSystem.Tests.slnx` instead. Run tests with `dotnet test BookingSystem.Tests.slnx` (a bare `dotnet test` fails — two solutions at the root). CI builds the source solution, then runs the test solution.
 
 ## Testing Kafka consumers
 

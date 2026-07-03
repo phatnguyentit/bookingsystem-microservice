@@ -11,6 +11,8 @@ on:
 
 permissions:
   contents: read
+  checks: write          # publish-unit-test-result-action posts a check run
+  pull-requests: write   # ...and a results comment on PRs
 
 jobs:
   build:
@@ -22,10 +24,51 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: 10.0.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore BookingSystem.slnx
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build BookingSystem.slnx --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      # Test projects live in their own solution; no --no-build because the build
+      # step above only compiles BookingSystem.slnx (source projects).
+      run: dotnet test BookingSystem.Tests.slnx --verbosity normal --logger trx --results-directory TestResults
+
+    - name: Publish test results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      id: test-results
+      if: always()
+      with:
+        files: TestResults/**/*.trx
+
+    # The badge JSON lives in a gist so it survives across runs; shields.io renders it.
+    # Requires: a gist (its id below) and a PAT with gist scope in the GIST_SECRET repo secret.
+    - name: Prepare badge data
+      if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      shell: bash
+      run: |
+        json=$(cat <<'EOF'
+        ${{ steps.test-results.outputs.json }}
+        EOF
+        )
+        passed=$(echo "$json" | jq -r '.stats.tests_succ')
+        failed=$(echo "$json" | jq -r '.stats.tests_fail')
+        total=$(echo "$json" | jq -r '.stats.tests')
+        if [ "$failed" = "0" ]; then
+          echo "BADGE_MESSAGE=$passed passed" >> "$GITHUB_ENV"
+          echo "BADGE_COLOR=31c653" >> "$GITHUB_ENV"
+        else
+          echo "BADGE_MESSAGE=$failed of $total failed" >> "$GITHUB_ENV"
+          echo "BADGE_COLOR=e05d44" >> "$GITHUB_ENV"
+        fi
+
+    - name: Update test badge
+      if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: schneegans/dynamic-badges-action@v1.7.0
+      with:
+        auth: ${{ secrets.GIST_SECRET }}
+        gistID: 3c5ef9cca029a25a961494cb73c9f22a
+        filename: bookingsystem-tests.json
+        label: tests
+        message: ${{ env.BADGE_MESSAGE }}
+        color: ${{ env.BADGE_COLOR }}
