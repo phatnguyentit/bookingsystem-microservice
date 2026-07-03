@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/tests/">
+    <Project Path="tests/BookingService.Api.Tests/BookingService.Api.Tests.csproj" />
+    <Project Path="tests/BookingService.Application.Tests/BookingService.Application.Tests.csproj" />
+    <Project Path="tests/BookingService.Domain.Tests/BookingService.Domain.Tests.csproj" />
+    <Project Path="tests/CatalogService.Tests/CatalogService.Tests.csproj" />
+    <Project Path="tests/NotificationService.Tests/NotificationService.Tests.csproj" />
+    <Project Path="tests/PaymentService.Tests/PaymentService.Tests.csproj" />
+    <Project Path="tests/ReviewService.Tests/ReviewService.Tests.csproj" />
+    <Project Path="tests/SearchService.Tests/SearchService.Tests.csproj" />
+    <Project Path="tests/Shared.Messaging.Tests/Shared.Messaging.Tests.csproj" />
+    <Project Path="tests/UserService.Tests/UserService.Tests.csproj" />
+  </Folder>
+</Solution>

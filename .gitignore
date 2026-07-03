@@ -65,3 +65,7 @@ nunit-*.xml
 # GitHub App private keys — NEVER commit (bot credential)
 *.pem
 tools/git-bot/*.pem
+
+# Test result files
+TestResults/
+*.trx

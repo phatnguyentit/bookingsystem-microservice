@@ -15,6 +15,17 @@ public abstract class KafkaConsumerBase<T>(string topic, string groupId, IOption
     // topics provisioned in AppHost/Program.cs.
     private string DeadLetterTopic => $"{topic}.dlq";
 
+    // When the dead-letter publish itself fails we rewind and retry rather than commit;
+    // this backoff keeps that from becoming a hot loop while the broker is unavailable.
+    private static readonly TimeSpan DeadLetterRetryBackoff = TimeSpan.FromSeconds(1);
+
+    // Seams so the consume/retry/dead-letter logic can be exercised without a broker.
+    protected virtual IConsumer<string, string> CreateConsumer(ConsumerConfig config)
+        => new ConsumerBuilder<string, string>(config).Build();
+
+    protected virtual IProducer<string, string> CreateDeadLetterProducer(ProducerConfig config)
+        => new ProducerBuilder<string, string>(config).Build();
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var config = new ConsumerConfig
@@ -25,9 +36,9 @@ public abstract class KafkaConsumerBase<T>(string topic, string groupId, IOption
             EnableAutoCommit = false,
         };
 
-        using var consumer = new ConsumerBuilder<string, string>(config).Build();
-        using var deadLetterProducer = new ProducerBuilder<string, string>(
-            new ProducerConfig { BootstrapServers = kafkaSettings.Value.BootstrapServers }).Build();
+        using var consumer = CreateConsumer(config);
+        using var deadLetterProducer = CreateDeadLetterProducer(
+            new ProducerConfig { BootstrapServers = kafkaSettings.Value.BootstrapServers });
 
         consumer.Subscribe(topic);
 
@@ -63,12 +74,12 @@ public abstract class KafkaConsumerBase<T>(string topic, string groupId, IOption
                     logger.LogError(ex,
                         "Could not deserialize message at {Offset} from {Topic}; sending to dead-letter",
                         result.TopicPartitionOffset, topic);
-                    await SendToDeadLetterAsync(deadLetterProducer, result, ex, attempts, stoppingToken);
 
-                    // Consumer: Commit the offset to the broker so we don't retry this message again.
-                    // Broker: Last committed offset will be updated.
-                    consumer.Commit(result);
-                    retrying = null;
+                    // Consumer: Commit the offset to the broker so we don't retry this message again,
+                    // but only once it is safely parked. If the DLQ publish fails the offset is rewound.
+                    retrying = await TryDeadLetterAndCommitAsync(consumer, deadLetterProducer, result, ex, attempts, stoppingToken)
+                        ? null
+                        : result.TopicPartitionOffset;
                     continue;
                 }
 
@@ -93,9 +104,9 @@ public abstract class KafkaConsumerBase<T>(string topic, string groupId, IOption
                     logger.LogError(ex,
                         "Permanent failure for {Offset} on {Topic}; sending to dead-letter",
                         result.TopicPartitionOffset, topic);
-                    await SendToDeadLetterAsync(deadLetterProducer, result, ex, attempts, stoppingToken);
-                    consumer.Commit(result);
-                    retrying = null;
+                    retrying = await TryDeadLetterAndCommitAsync(consumer, deadLetterProducer, result, ex, attempts, stoppingToken)
+                        ? null
+                        : result.TopicPartitionOffset;
                 }
                 catch (Exception ex)
                 {
@@ -118,9 +129,9 @@ public abstract class KafkaConsumerBase<T>(string topic, string groupId, IOption
                         logger.LogError(ex,
                             "Processing failed after {Max} attempts for {Offset} on {Topic}; sending to dead-letter",
                             maxAttempts, result.TopicPartitionOffset, topic);
-                        await SendToDeadLetterAsync(deadLetterProducer, result, ex, attempts, stoppingToken);
-                        consumer.Commit(result);
-                        retrying = null;
+                        retrying = await TryDeadLetterAndCommitAsync(consumer, deadLetterProducer, result, ex, attempts, stoppingToken)
+                            ? null
+                            : result.TopicPartitionOffset;
                     }
                 }
             }
@@ -132,7 +143,31 @@ public abstract class KafkaConsumerBase<T>(string topic, string groupId, IOption
         }
     }
 
-    private async Task SendToDeadLetterAsync(
+    // Parks the message in the dead-letter topic and, only on success, commits the source offset.
+    // Returns true when the message was dead-lettered and committed; false when the DLQ publish
+    // failed, in which case the offset is rewound (after a backoff) so the same message is retried
+    // on the next cycle rather than being silently dropped.
+    private async Task<bool> TryDeadLetterAndCommitAsync(
+        IConsumer<string, string> consumer,
+        IProducer<string, string> producer,
+        ConsumeResult<string, string> result,
+        Exception error,
+        int attempts,
+        CancellationToken cancellationToken)
+    {
+        if (await SendToDeadLetterAsync(producer, result, error, attempts, cancellationToken))
+        {
+            consumer.Commit(result);
+            return true;
+        }
+
+        await Task.Delay(DeadLetterRetryBackoff, cancellationToken);
+        consumer.Seek(result.TopicPartitionOffset);
+        return false;
+    }
+
+    // Returns true if the message was published to the dead-letter topic, false otherwise.
+    private async Task<bool> SendToDeadLetterAsync(
         IProducer<string, string> producer,
         ConsumeResult<string, string> result,
         Exception error,
@@ -158,14 +193,16 @@ public abstract class KafkaConsumerBase<T>(string topic, string groupId, IOption
             logger.LogInformation(
                 "Dead-lettered message from {Offset} to {DeadLetterTopic}",
                 result.TopicPartitionOffset, DeadLetterTopic);
+            return true;
         }
         catch (Exception ex)
         {
-            // If we can't even dead-letter, log loudly. The original is still committed by the
-            // caller to avoid blocking the partition; the payload is preserved in the log above.
+            // If we can't even dead-letter, log loudly and report failure so the caller does not
+            // commit the source offset — the message is rewound and retried instead of dropped.
             logger.LogCritical(ex,
-                "Failed to publish to dead-letter topic {DeadLetterTopic}; message at {Offset} will be dropped",
+                "Failed to publish to dead-letter topic {DeadLetterTopic}; message at {Offset} will be retried",
                 DeadLetterTopic, result.TopicPartitionOffset);
+            return false;
         }
     }
 }

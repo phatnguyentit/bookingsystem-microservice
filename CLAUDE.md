@@ -11,7 +11,7 @@ Coding conventions, architectural constraints, and module-specific context are i
 | [architecture.md](.claude/rules/architecture.md) | Two service patterns, layer dependency rules, shared projects, adding a new service |
 | [api-conventions.md](.claude/rules/api-conventions.md) | Endpoint groups, feature folder layout, command/query naming, response conventions |
 | [database.md](.claude/rules/database.md) | EF Core registration, entity configuration, value object mapping, migrations, Redis keys |
-| [testing.md](.claude/rules/testing.md) | Test project structure and patterns (no tests exist yet) |
+| [testing.md](.claude/rules/testing.md) | Test project structure and patterns (BookingService unit tests exist) |
 | [modules/identity.md](.claude/rules/modules/identity.md) | UserService — entity, repository, endpoints, gaps |
 | [modules/catalog.md](.claude/rules/modules/catalog.md) | CatalogService — entity, repository, endpoint path quirk, gaps |
 | [modules/booking.md](.claude/rules/modules/booking.md) | BookingService — DDD aggregate, outbox, commands, Kafka output |
@@ -38,7 +38,7 @@ dotnet run
 docker compose -f docker/docker-compose.infra.yml up -d
 ```
 
-There are no test projects yet.
+Unit tests live in `tests/` — one project per service plus `Shared.Messaging.Tests`. Run them with `dotnet test` from the repo root.
 
 ### EF Migrations
 
