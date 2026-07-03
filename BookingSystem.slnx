@@ -40,6 +40,18 @@
     <Project Path="src/Services/UserService/BookingSystem.UserService.Api/BookingSystem.UserService.Api.csproj" />
     <Project Path="src/Services/UserService/BookingSystem.UserService.Infrastructure/BookingSystem.UserService.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BookingService.Api.Tests/BookingService.Api.Tests.csproj" />
+    <Project Path="tests/BookingService.Application.Tests/BookingService.Application.Tests.csproj" />
+    <Project Path="tests/BookingService.Domain.Tests/BookingService.Domain.Tests.csproj" />
+    <Project Path="tests/CatalogService.Tests/CatalogService.Tests.csproj" />
+    <Project Path="tests/NotificationService.Tests/NotificationService.Tests.csproj" />
+    <Project Path="tests/PaymentService.Tests/PaymentService.Tests.csproj" />
+    <Project Path="tests/ReviewService.Tests/ReviewService.Tests.csproj" />
+    <Project Path="tests/SearchService.Tests/SearchService.Tests.csproj" />
+    <Project Path="tests/Shared.Messaging.Tests/Shared.Messaging.Tests.csproj" />
+    <Project Path="tests/UserService.Tests/UserService.Tests.csproj" />
+  </Folder>
   <Folder Name="/src/Shared/">
     <Project Path="src/Shared/BookingSystem.Shared.Contracts/BookingSystem.Shared.Contracts.csproj" />
     <Project Path="src/Shared/BookingSystem.Shared.CrossCutting/BookingSystem.Shared.CrossCutting.csproj" />

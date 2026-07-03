@@ -2,17 +2,32 @@
 
 ## Current state
 
-There are no test projects in the repository. The CI workflow (`dotnet test`) will no-op until test projects are added.
+Unit test projects exist for every service and for `Shared.Messaging` (issue #38). Integration test projects (Testcontainers) have not been added yet.
 
-## Recommended project structure (when adding tests)
+## Project structure
 
 ```
 tests/
-├── BookingService.Domain.Tests/        ← xUnit, no EF/Kafka deps
-├── BookingService.Application.Tests/   ← xUnit + NSubstitute
-├── BookingService.Integration.Tests/   ← Testcontainers (Postgres, Kafka, Redis)
-└── {OtherService}.Integration.Tests/   ← per service as needed
+├── BookingService.Domain.Tests/        ← aggregate, value objects, events; no EF/Kafka deps
+├── BookingService.Application.Tests/   ← command/query/event handlers (NSubstitute mocks)
+├── BookingService.Api.Tests/           ← Kafka consumer → command dispatch
+├── UserService.Tests/                  ← feature handlers
+├── CatalogService.Tests/               ← feature handlers
+├── PaymentService.Tests/               ← ProcessPayment/RefundPayment handlers + consumers
+├── ReviewService.Tests/                ← rating validation
+├── SearchService.Tests/                ← query delegation
+├── NotificationService.Tests/          ← consumers + EmailNotificationSender (Sqlite in-memory)
+├── Shared.Messaging.Tests/             ← KafkaConsumerBase retry/dead-letter logic
+└── {Service}.Integration.Tests/        ← Testcontainers (Postgres, Kafka, Redis) — not yet added
 ```
+
+Conventions: all projects target `net10.0`, use xUnit + FluentAssertions (pinned 7.x, the last Apache-2.0 release) + NSubstitute, declare `<Using Include="Xunit" />` (no `using Xunit;` needed in files), and are registered in **both** solutions: `BookingSystem.slnx` (everything) and `BookingSystem.Tests.slnx` (tests only — use `dotnet test BookingSystem.Tests.slnx` for a faster test-focused loop). Projects that reference an `*.Api` project also need `<FrameworkReference Include="Microsoft.AspNetCore.App" />`.
+
+## Testing Kafka consumers
+
+`KafkaConsumerBase<T>` exposes two `protected virtual` factory seams — `CreateConsumer(ConsumerConfig)` and `CreateDeadLetterProducer(ProducerConfig)` — so its consume/retry/dead-letter loop is unit-testable with substituted `IConsumer`/`IProducer` (see `Shared.Messaging.Tests/KafkaConsumerBaseTests.cs`; a queue of `ConsumeResult`s drives the loop, and draining it throws `OperationCanceledException` to stop it).
+
+Concrete consumers' `ProcessAsync` overrides are tested via a test subclass that exposes the protected method, with a real `ServiceCollection` container holding a substituted `ISender`/`INotificationSender` — this exercises the scope-resolution path without mocking DI extension methods.
 
 ## Unit tests — Domain layer
 
