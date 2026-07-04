@@ -1,124 +1,245 @@
 # Architecture & Design Patterns
 
-Analysis of the `bookingsystem-saga` microservice architecture.
+Design patterns and reliability model of the `bookingsystem-microservice` solution.
 
 ---
 
-## Core Architectural Patterns
+## System overview
+
+```mermaid
+flowchart TB
+    Client([Client])
+    Client -->|HTTPS| GW["API Gateway · YARP"]
+
+    subgraph HTTP["Request-time services"]
+        direction LR
+        User["user-service"]
+        Catalog["catalog-service"]
+        Booking["booking-service<br/>DDD · Outbox"]
+        Payment["payment-service<br/>Outbox · Refunds"]
+        Search["search-service"]
+        Review["review-service"]
+    end
+
+    GW --> User
+    GW --> Catalog
+    GW --> Booking
+    GW --> Payment
+    GW --> Search
+    GW --> Review
+
+    Booking -. HTTP .-> Catalog
+    Booking -. HTTP .-> User
+
+    Kafka{{"Kafka event bus (+ .dlq)"}}
+    Booking <--> Kafka
+    Payment <--> Kafka
+    Notification["notification-service<br/>Kafka-only"] --> Kafka
+
+    subgraph Infra["Infrastructure"]
+        direction LR
+        PG[("PostgreSQL ×6")]
+        RD[("Redis")]
+        ES[("Elasticsearch")]
+    end
+    User --- PG
+    Catalog --- PG
+    Booking --- PG
+    Payment --- PG
+    Review --- PG
+    Notification --- PG
+    Search --- ES
+    Booking --- RD
+```
+
+---
+
+## Core architectural patterns
 
 | Pattern | Location | Notes |
 |---|---|---|
-| **API Gateway** | `src/Gateway/BookingSystem.ApiGateway/` | YARP reverse proxy, JWT auth, rate limiting (100 req/min) |
-| **Database per Microservice** | `src/Orchestration/BookingSystem.AppHost/Program.cs` | Each service has its own PostgreSQL DB (`userdb`, `catalogdb`, `bookingdb`, etc.) |
-| **Event-Driven / Choreography** | `src/Shared/BookingSystem.Shared.Messaging/` | Kafka-based async communication; services react to events independently |
-| **Service Discovery** | `src/ServiceDefaults/BookingSystem.ServiceDefaults/Extensions.cs` | .NET Aspire DNS-based service discovery |
+| **API Gateway** | `src/Gateway/BookingSystem.ApiGateway/` | YARP reverse proxy; JWT bearer (non-Development) or a pass-through `AuthHandler` (Development); fixed-window rate limiter (100 req/min) registered |
+| **Database per Microservice** | `src/Orchestration/BookingSystem.AppHost/Program.cs` | Six PostgreSQL DBs (`userdb`, `catalogdb`, `bookingdb`, `paymentdb`, `notifdb`, `reviewdb`); no service reads another's DB |
+| **Event-Driven / Choreography (Saga)** | `src/Shared/BookingSystem.Shared.Messaging/` + each service's `Consumers/` | Kafka async communication; services react to integration events independently — no central orchestrator |
+| **Transactional Outbox** | `BookingService.Infrastructure/Outbox/`, `PaymentService.Infrastructure/Outbox/` | Events staged in the same DB transaction as the state change, then relayed to Kafka by a background processor |
+| **Service Discovery & Resilience** | `src/ServiceDefaults/BookingSystem.ServiceDefaults/Extensions.cs` | Aspire DNS-based discovery; `StandardResilienceHandler` on all HTTP clients |
 
 ---
 
-## Domain-Driven Design (DDD) — `BookingService`
+## Domain-Driven Design — `BookingService`
+
+`BookingService` is the only 4-layer Clean Architecture service (Domain → Application →
+Infrastructure → Api); every other service is a 2-layer vertical slice.
 
 | Pattern | Location |
 |---|---|
-| **Aggregate Root** | `BookingService.Domain/Aggregates/Booking.cs` — state machine: Pending → Confirmed/Cancelled → Completed |
-| **Value Objects** | `Domain/ValueObjects/` — `Money`, `DateRange`, `BookingId`, `UserId` (strongly-typed IDs) |
-| **Domain Events** | `Domain/Events/` — `BookingCreatedEvent`, `BookingConfirmedEvent`, `BookingCancelledEvent` |
+| **Aggregate Root** | `Domain/Aggregates/Booking.cs` — state machine `Pending → Confirmed → Completed`, or `→ Cancelled` |
+| **Value Objects** | `Domain/ValueObjects/` — `Money`, `DateRange`, and strongly-typed IDs `BookingId`, `CatalogId`, `UserId` |
+| **Domain Events** | `Domain/Events/` — `BookingCreatedEvent`, `BookingConfirmedEvent`, `BookingCancelledEvent`, `BookingConfirmationFailedEvent` |
 | **Repository Pattern** | `IBookingRepository` (Domain) → `BookingRepository` (Infrastructure/EF Core) |
+| **Unit of Work + Outbox** | `Infrastructure/Messaging/UnitOfWork.cs` — serializes aggregate domain events into `outbox_messages` and saves atomically |
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending: Create()
+    Pending --> Confirmed: Confirm() via payment.succeeded
+    Pending --> Cancelled: Cancel() via payment.failed
+    Confirmed --> Completed: Complete()
+    Confirmed --> Cancelled: Cancel()
+    Cancelled --> [*]
+    Completed --> [*]
+```
+
+> `RejectConfirmation(reason)` is raised when a captured payment lands on a booking that is no longer
+> `Pending`. It does **not** change `Status`; it only emits `BookingConfirmationFailedEvent` so a
+> refund can be choreographed downstream.
 
 ---
 
-## Application Layer Patterns
+## Application layer patterns
 
 | Pattern | Location |
 |---|---|
-| **CQRS** | Commands (`CreateBookingCommand`, `CancelBookingCommand`) and Queries (`GetBookingQuery`) separated via MediatR — applied across all services |
-| **Mediator** | MediatR `ISender`/`IPublisher` used in all services for request routing and domain event dispatching |
-| **Unit of Work** | `BookingService.Infrastructure/Messaging/UnitOfWork.cs` — saves to DB, then dispatches domain events via MediatR |
+| **CQRS** | Commands (`CreateBookingCommand`, `CancelBookingCommand`, `ConfirmBookingCommand`) and Queries (`GetBookingQuery`) separated via MediatR — applied across all services |
+| **Mediator** | MediatR `ISender`/`IPublisher` for request routing and domain-event dispatch |
+| **Idempotent handlers** | e.g. `ConfirmBookingHandler` treats a redelivered `payment.succeeded` on an already-`Confirmed` booking as a no-op |
 
 ---
 
-## Infrastructure Patterns
+## Infrastructure patterns
 
 | Pattern | Location |
 |---|---|
-| **Event Publishing** | `src/Shared/BookingSystem.Shared.Messaging/KafkaEventPublisher.cs` — Confluent.Kafka, JSON serialized, per-message Guid key |
-| **Background Consumer** | `NotificationService/Api/Consumers/KafkaConsumers.cs` — `BackgroundService`-based Kafka consumers, manual commit |
-| **Distributed Cache** | Redis on all services via `AddRedisDistributedCache()` |
-| **Full-Text Search** | `SearchService/Infrastructure/Search/ElasticsearchService.cs` — Elasticsearch with pagination and date/price filtering |
-| **Circuit Breaker / Resilience** | Via `StandardResilienceHandler` in ServiceDefaults (retries, timeouts, circuit breaker) |
-| **Observability** | OpenTelemetry (traces + metrics + logs) across all services |
+| **Event Publishing** | `Shared.Messaging/KafkaEventPublisher.cs` — Confluent.Kafka, JSON serialized |
+| **Outbox Relay** | `OutboxProcessor` / `PaymentOutboxProcessor` — poll unprocessed rows (~5 s, batch 20), publish, mark processed |
+| **Reliable Consumers** | `Shared.Messaging/KafkaConsumerBase.cs` — manual offset commit, bounded retry, dead-letter |
+| **Refund Reconciler** | `PaymentService/Refunds/RefundProcessor.cs` — drives durable `RefundPending` obligations to completion |
+| **Payment Gateway Abstraction** | `PaymentService.Infrastructure/Gateway/` — `IPaymentGateway` + `MockPaymentGateway` (always approves; swap for a real gateway) |
+| **Distributed Cache / Lock** | Redis via `AddRedisDistributedCache()`; `lock:listing:{id}:{date}` for double-booking |
+| **Full-Text Search** | `SearchService/Infrastructure/Search/ElasticsearchService.cs` — Elasticsearch with pagination (date/price filters are accepted but not yet applied) |
+| **Observability** | OpenTelemetry (traces + metrics + logs) via ServiceDefaults |
 
 ---
 
-## Event Flow (Booking Workflow Example)
+## Event choreography
 
-```
-Client
-  ↓ POST /api/bookings
-APIGateway (YARP) [Rate limit, Auth]
-  ↓ routes to booking-service
-BookingService.Api/Endpoints/BookingEndpoints
-  ↓ MediatR ISender.Send()
-CreateBookingCommand → CreateBookingHandler
-  ↓
-  1. Call CatalogServiceClient.GetListingAsync() [HTTP to catalog-service]
-  2. Validate: listing available, no overlaps
-  3. Create Booking aggregate
-  4. booking.AddDomainEvent(BookingCreatedEvent)
-  5. bookingRepo.AddAsync(booking)
-  6. unitOfWork.CommitAsync()
-     ↓
-     - DbContext.SaveChangesAsync() [Persist to DB]
-     - Extract DomainEvents from ChangeTracker
-     - MediatR Publish(BookingCreatedEvent)
-       ↓
-       PublishBookingCreatedHandler
-         ↓
-         IEventPublisher.PublishAsync("booking.created", BookingCreatedIntegrationEvent)
-           ↓
-           KafkaEventPublisher → Kafka topic "booking.created"
+Every arrow is a Kafka topic. Each topic also has a `<topic>.dlq` provisioned in `AppHost`.
 
-Parallel: Event Subscribers
-  ↓
-NotificationService.BookingCreatedKafkaConsumer (BackgroundService)
-  ↓ Consume from "booking.created"
-  ↓ INotificationSender.SendEmailAsync(userId, message)
-  ↓ Commit offset
+```mermaid
+flowchart LR
+    B["BookingService"]
+    P["PaymentService"]
+    N["NotificationService"]
 
-Optional: PaymentService listens for booking.created
-  → Initiates payment process
-  → Publishes payment.succeeded or payment.failed
-    ↓
-    NotificationService receives and sends email
+    B -->|booking.created| P
+    B -->|booking.created| N
+    P -->|payment.succeeded| B
+    P -->|payment.succeeded| N
+    P -->|payment.failed| B
+    P -->|payment.failed| N
+    B -->|booking.cancelled| N
+    B -->|booking.confirmation.failed| P
+    P -->|payment.refunded| R(["no consumer yet"])
+    P -->|payment.refund.failed| O(["operator alert"])
 ```
 
----
-
-## Inter-Service Communication
-
-**Synchronous (HTTP)**
-- BookingService → CatalogService (verify listing exists/available)
-- BookingService → UserService (validation)
-- All via `HttpClient` with Aspire service discovery
-
-**Asynchronous (Kafka)**
-- `booking.created` — BookingService → NotificationService
-- `booking.cancelled` — BookingService → (subscribers)
-- `payment.succeeded` — PaymentService → NotificationService
-- `payment.failed` — PaymentService → NotificationService
+| Topic | Producer | Consumer(s) |
+|---|---|---|
+| `booking.created` | BookingService (outbox) | PaymentService, NotificationService |
+| `booking.cancelled` | BookingService (outbox) | NotificationService |
+| `booking.confirmation.failed` | BookingService (outbox) | PaymentService |
+| `payment.succeeded` | PaymentService (outbox) | BookingService, NotificationService |
+| `payment.failed` | PaymentService (outbox) | BookingService, NotificationService |
+| `payment.refunded` | PaymentService (outbox) | _(none yet)_ |
+| `payment.refund.failed` | PaymentService (outbox) | _(none — operator alert)_ |
 
 ---
 
-## Notable Design Decisions & Gaps
+## Outbox pattern
 
-### What's there
-- **Choreography-based Saga** — no central coordinator; services react to Kafka events independently (this is the "Saga" in the repo name)
-- **Domain → Integration event translation** — MediatR handlers convert domain events to integration events before publishing to Kafka
-- **Unit of Work** publishes domain events after DB commit, keeping persistence and messaging in sync within a request
-- **Clean Architecture** per service: Domain → Application → Infrastructure → API
+Producers never publish to Kafka inline. They stage an `OutboxMessage` in the **same transaction**
+as the state change, so a crash between "DB committed" and "event published" cannot lose the event.
 
-### What's NOT implemented
-| Gap | Risk |
+```mermaid
+sequenceDiagram
+    participant H as Command Handler
+    participant DB as Postgres (single tx)
+    participant OP as OutboxProcessor
+    participant K as Kafka
+
+    H->>DB: save entity + outbox row (atomic)
+    Note over OP: background poll (~5s, batch 20)
+    OP->>DB: SELECT rows WHERE ProcessedAt IS NULL AND Error IS NULL
+    OP->>K: publish integration event
+    OP->>DB: mark ProcessedAt (success) / Error (failure)
+```
+
+`BookingService.UnitOfWork` collects domain events from the `ChangeTracker` and serializes them to
+the outbox; `PaymentService` handlers stage integration events directly.
+
+---
+
+## Consumer reliability
+
+`KafkaConsumerBase<T>` consumes with **manual commit** so an offset only advances after successful
+processing. It classifies failures and never lets a failed message's offset get leapfrogged.
+
+```mermaid
+flowchart TD
+    M[Consume message] --> D{Deserialize?}
+    D -->|malformed JSON| DLQ[["park in .dlq<br/>then commit"]]
+    D -->|ok| PR[ProcessAsync]
+    PR -->|success| CM[Commit offset]
+    PR -->|IPermanentMessageException| DLQ
+    PR -->|other exception| R{attempts &lt; max?}
+    R -->|yes| SK[Seek back + backoff<br/>retry same offset]
+    R -->|no| DLQ
+    SK --> M
+```
+
+| Failure | Example | Behaviour |
+|---|---|---|
+| **Transient** | DB blip, network error | Seek back + retry up to `maxAttempts` (default 3, exponential backoff); then dead-letter |
+| **Permanent (poison)** | `NotFoundException` (`: IPermanentMessageException`), malformed JSON | Skip the retry budget → dead-letter immediately → commit |
+| **Business compensation** | payment captured, booking unconfirmable | Not an exception — handler emits a compensation event and returns; offset committed |
+
+**Refund exception:** a refund obligation is a financial debt, so it is **never** dead-lettered.
+`RefundPaymentHandler` records a durable `RefundPending` state and `RefundProcessor` retries transient
+gateway failures indefinitely; only a *permanent* gateway decline moves it to `RefundFailed` and
+raises an operator alert.
+
+---
+
+## Inter-service communication
+
+**Synchronous (HTTP)** — only from BookingService, at request time, via typed `HttpClient` with
+Aspire service discovery + `StandardResilienceHandler`:
+
+- `CatalogServiceClient` → `GET /api/catalog/catalogs/{id}` (verify listing exists / available)
+- `UserServiceClient` → `GET /api/users/{id}` (registered; not currently called by `CreateBookingHandler`)
+
+**Asynchronous (Kafka)** — all other cross-service communication (see the choreography diagram above).
+
+---
+
+## What's implemented vs. open follow-ups
+
+### Implemented
+- **Choreography-based Saga** — booking ↔ payment ↔ notification, driven entirely by Kafka events (this is the "saga" in the repo's design).
+- **Transactional Outbox** — in both BookingService and PaymentService; the DB state and event stream cannot diverge.
+- **Dead-letter queues + failure classification** — transient retry vs. permanent poison vs. business compensation.
+- **Durable refund compensation** — `RefundProcessor` reconciles `RefundPending` obligations; refunds are never dropped.
+- **Idempotent consumers** — safe against at-least-once redelivery.
+- **Clean Architecture** on BookingService; vertical slices elsewhere.
+
+### Open follow-ups
+| Gap | Notes |
 |---|---|
-| **Outbox Pattern** | If Kafka publish fails after DB commit, events are silently lost |
-| **Orchestration-based Saga** | No central saga coordinator or state machine for long-running workflows |
-| **Event Sourcing** | Events are dispatched in-memory only; not persisted as the source of truth |
+| No consumer for `payment.refunded` | No "you've been refunded" email yet |
+| No consumer for `payment.refund.failed` | Operator alert is a `LogCritical` only — no ticketing/ops workflow |
+| No consumer for `booking.cancelled` beyond email | e.g. CatalogService does not release availability |
+| `catalog.availability.updated` not wired | CatalogService publishes no Kafka events; SearchService's index is never populated automatically |
+| SearchService filters | `checkIn` / `checkOut` / `maxPrice` accepted but not applied to the Elasticsearch query |
+| Refund observability | `RefundFailed` / stuck-refund signals are logs only — OpenTelemetry counters are deferred (see `TODO(metrics)` in `RefundProcessor`) |
+| Integration tests | Testcontainers-based saga tests not yet added |
+```
