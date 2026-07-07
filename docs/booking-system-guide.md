@@ -1,6 +1,12 @@
 # Booking System — Microservice Architecture (.NET 10)
 
-> Full solution scaffold using .NET Aspire, YARP API Gateway, and DDD on BookingService.
+> Full solution walkthrough using .NET Aspire, YARP API Gateway, and DDD on BookingService.
+>
+> **Scope note:** the code snippets below are illustrative of the shape of each layer and may be
+> simplified relative to the source. For the authoritative, up-to-date design — including the Kafka
+> **outbox**, dead-letter queues, and the refund saga — see
+> [architecture-patterns.md](architecture-patterns.md) and
+> [booking-saga-scenarios.md](booking-saga-scenarios.md).
 
 ---
 
@@ -599,25 +605,37 @@ public class BookingConfiguration : IEntityTypeConfiguration<Booking>
 }
 ```
 
+The **transactional outbox** is implemented: `UnitOfWork.CommitAsync` serializes each aggregate's
+domain events into `outbox_messages` rows and saves them in the *same* `SaveChangesAsync` as the
+entity change, so persistence and messaging commit atomically. A background `OutboxProcessor`
+(polling ~5 s, batch 20) later relays those rows to Kafka via MediatR, marking each row
+`ProcessedAt` on success or `Error` on failure. Nothing is published to Kafka inline.
+
 ```csharp
-// Infrastructure/Messaging/DomainEventDispatcher.cs
-// Dispatches domain events to Kafka after DB commit (Outbox pattern recommended)
-public class UnitOfWork(BookingDbContext db, IPublisher publisher) : IUnitOfWork
+// Infrastructure/Messaging/UnitOfWork.cs
+public class UnitOfWork(BookingDbContext db) : IUnitOfWork
 {
     public async Task CommitAsync(CancellationToken ct = default)
     {
-        var events = db.ChangeTracker
-            .Entries<AggregateRoot>()
-            .SelectMany(e => e.Entity.DomainEvents)
+        var aggregates = db.ChangeTracker.Entries<AggregateRoot>()
+            .Where(e => e.Entity.DomainEvents.Count != 0)
             .ToList();
 
-        await db.SaveChangesAsync(ct);
+        foreach (var entry in aggregates)
+        {
+            foreach (var domainEvent in entry.Entity.DomainEvents)
+                db.Set<OutboxMessage>().Add(OutboxMessage.For(domainEvent)); // staged, not published
 
-        foreach (var evt in events)
-            await publisher.Publish(evt, ct); // MediatR -> Kafka producers
+            entry.Entity.ClearDomainEvents();
+        }
+
+        await db.SaveChangesAsync(ct); // entity change + outbox rows commit together
     }
 }
 ```
+
+See the reliability model (retry / dead-letter / refunds) in
+[architecture-patterns.md](architecture-patterns.md#consumer-reliability).
 
 ### 5.5 API Layer
 
@@ -712,40 +730,68 @@ public record BookingCreatedIntegrationEvent(
 
 ### 6.2 Kafka Topics
 
+Topic names are constants in `Shared.Contracts/Events/KafkaTopics.cs`. Each business topic is
+provisioned in `AppHost/Program.cs` with a matching `<topic>.dlq` dead-letter topic.
+
 | Topic | Producer | Consumers |
 |---|---|---|
-| `booking.created` | BookingService | PaymentService, NotificationService, CatalogService |
-| `booking.cancelled` | BookingService | NotificationService, CatalogService |
+| `booking.created` | BookingService | PaymentService, NotificationService |
+| `booking.cancelled` | BookingService | NotificationService |
+| `booking.confirmation.failed` | BookingService | PaymentService |
 | `payment.succeeded` | PaymentService | BookingService, NotificationService |
 | `payment.failed` | PaymentService | BookingService, NotificationService |
-| `catalog.availability.updated` | CatalogService | SearchService |
+| `payment.refunded` | PaymentService | _(no consumer yet)_ |
+| `payment.refund.failed` | PaymentService | _(no consumer — operator alert)_ |
+
+> `catalog.availability.updated` is referenced in older design notes but is **not** wired:
+> CatalogService currently publishes no Kafka events.
 
 ---
 
 ## 7. Inter-Service Communication
 
-### 7.1 Synchronous (REST + gRPC)
+The booking workflow is a Kafka-choreographed saga. Happy path:
+
+```mermaid
+sequenceDiagram
+    actor C as Client
+    participant B as BookingService
+    participant K as Kafka
+    participant P as PaymentService
+    participant N as NotificationService
+
+    C->>B: POST /api/bookings
+    B->>B: Booking.Create() ⇒ Pending
+    B->>K: booking.created (outbox)
+    B-->>C: 201 Created
+    par Payment branch
+        K->>P: booking.created
+        P->>P: charge ⇒ Succeeded
+        P->>K: payment.succeeded (outbox)
+        K->>B: payment.succeeded
+        B->>B: Booking.Confirm() ⇒ Confirmed
+    and Notification branch
+        K->>N: booking.created ⇒ email
+        K->>N: payment.succeeded ⇒ email
+    end
+```
+
+Full failure/compensation handling (declined payment, saga conflict, refunds, redelivery) is in
+[booking-saga-scenarios.md](booking-saga-scenarios.md).
+
+### 7.1 Synchronous (HTTP)
+
+Only BookingService makes request-time calls to other services, via typed `HttpClient`s resolved by
+Aspire service discovery. (gRPC and message-broker alternatives like RabbitMQ are **not** part of
+the current implementation — Kafka is the sole async transport.)
 
 ```csharp
 // BookingService calling CatalogService via typed HTTP client
 public class CatalogServiceClient(HttpClient http) : ICatalogServiceClient
 {
-    public async Task<ListingDto?> GetListingAsync(Guid listingId, CancellationToken ct)
-        => await http.GetFromJsonAsync<ListingDto>($"/api/catalog/listings/{listingId}", ct);
+    public async Task<CatalogDto?> GetCatalogAsync(Guid catalogId, CancellationToken ct)
+        => await http.GetFromJsonAsync<CatalogDto>($"/api/catalog/catalogs/{catalogId}", ct);
 }
-```
-
-For gRPC (BookingService → UserService high-frequency calls):
-```xml
-<!-- Add to .csproj -->
-<PackageReference Include="Grpc.AspNetCore" Version="2.*" />
-<PackageReference Include="Grpc.Net.Client" Version="2.*" />
-```
-
-```csharp
-// Register gRPC client (resolved via Aspire service discovery)
-builder.Services.AddGrpcClient<UserGrpc.UserGrpcClient>(o =>
-    o.Address = new Uri("http://user-service"));
 ```
 
 ### 7.2 Asynchronous (Kafka)
@@ -801,12 +847,12 @@ dotnet ef database update
 
 ### 8.2 Redis Usage Per Service
 
+Each service owns its own Redis key namespace (see `.claude/rules/database.md`):
+
 | Service | Redis Key Pattern | TTL | Purpose |
 |---|---|---|---|
-| ApiGateway | `ratelimit:{ip}` | 1 min | Rate limiting |
-| AuthService | `token:blacklist:{jti}` | token expiry | Token revocation |
-| CatalogService | `listing:{id}` | 5 min | Availability cache |
 | BookingService | `lock:listing:{id}:{date}` | 30 sec | Distributed lock (double-booking prevention) |
+| CatalogService | `listing:{id}` | 5 min | Availability cache |
 | SearchService | `search:{hash}` | 2 min | Query result cache |
 | UserService | `user:{id}:profile` | 10 min | Profile cache |
 
@@ -920,10 +966,11 @@ find src -name "*.csproj" | xargs -I {} dotnet sln add {}
 |---|---|---|
 | Orchestration | .NET Aspire + Docker | Service discovery, health checks, telemetry out of the box |
 | API Gateway | YARP | Native .NET, config-driven routing, JWT middleware |
-| Sync comms | REST + gRPC | REST for external/cross-team; gRPC for fast internal calls |
-| Async comms | Kafka + RabbitMQ | Kafka for fan-out events; RabbitMQ for task queues |
+| Sync comms | REST (typed `HttpClient`) | Request-time calls from BookingService only; gRPC considered but not used |
+| Async comms | Kafka | Fan-out integration events with an outbox producer + dead-letter consumers |
+| Reliability | Transactional outbox + DLQ + refund reconciler | No lost events; at-least-once with idempotent, retrying consumers |
 | ORM | EF Core 10 | Per-service DbContext, migrations, owned value objects |
 | Cache / Lock | Redis | Distributed cache + Redlock for booking concurrency |
-| Search | Elasticsearch | Full-text search, filters, geo queries |
+| Search | Elasticsearch | Full-text search over listings |
 | Architecture | DDD on BookingService | Complex booking domain justifies aggregates + domain events |
 | CQRS | MediatR | Clean separation of commands/queries per service |
