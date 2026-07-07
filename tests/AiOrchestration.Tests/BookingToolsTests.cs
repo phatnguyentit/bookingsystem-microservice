@@ -91,12 +91,12 @@ public class BookingToolsTests
     // --- Reads hit the gateway and run un-gated ---
 
     [Fact]
-    public async Task SearchListings_SendsPaginationParams_AndReturnsBody()
+    public async Task SearchCatalogs_SendsPaginationParams_AndReturnsBody()
     {
         var handler = new StubHandler(HttpStatusCode.OK, """[{"id":"x"}]""");
         var tools = TestFactory.Tools(_capture, handler, Guid.NewGuid());
 
-        var result = await tools.SearchListings("beach house");
+        var result = await tools.SearchCatalogs("beach house");
 
         result.Should().Be("""[{"id":"x"}]""");
         _capture.Pending.Should().BeNull(); // reads never propose
@@ -107,15 +107,29 @@ public class BookingToolsTests
     }
 
     [Fact]
-    public async Task GetListing_NotFound_ReturnsFriendlyMessage()
+    public async Task SearchCatalogsByName_HitsCatalogSearch_ReturnsBody()
+    {
+        var handler = new StubHandler(HttpStatusCode.OK, """[{"id":"x","title":"Seaside Villa"}]""");
+        var tools = TestFactory.Tools(_capture, handler, Guid.NewGuid());
+
+        var result = await tools.SearchCatalogsByName("Seaside Villa");
+
+        result.Should().Contain("Seaside Villa");
+        _capture.Pending.Should().BeNull(); // reads never propose
+        handler.LastRequest!.RequestUri!.PathAndQuery
+            .Should().Be("/api/catalog/catalogs/search?name=Seaside%20Villa");
+    }
+
+    [Fact]
+    public async Task GetCatalog_NotFound_ReturnsFriendlyMessage()
     {
         var handler = new StubHandler(HttpStatusCode.NotFound);
         var catalogId = Guid.NewGuid();
         var tools = TestFactory.Tools(_capture, handler, Guid.NewGuid());
 
-        var result = await tools.GetListing(catalogId);
+        var result = await tools.GetCatalog(catalogId);
 
-        result.Should().Be("Listing not found.");
+        result.Should().Be("Catalog not found.");
         handler.LastRequest!.RequestUri!.PathAndQuery.Should().Be($"/api/catalog/catalogs/{catalogId}");
     }
 

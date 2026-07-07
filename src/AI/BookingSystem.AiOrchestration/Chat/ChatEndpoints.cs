@@ -39,8 +39,9 @@ public static class ChatEndpoints
             {
                 Tools =
                 [
-                    AIFunctionFactory.Create(tools.SearchListings),
-                    AIFunctionFactory.Create(tools.GetListing),
+                    AIFunctionFactory.Create(tools.SearchCatalogs),
+                    AIFunctionFactory.Create(tools.SearchCatalogsByName),
+                    AIFunctionFactory.Create(tools.GetCatalog),
                     AIFunctionFactory.Create(tools.GetBooking),
                     AIFunctionFactory.Create(tools.CreateBooking),
                     AIFunctionFactory.Create(tools.CancelBooking),

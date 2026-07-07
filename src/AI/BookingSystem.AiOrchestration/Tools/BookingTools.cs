@@ -17,8 +17,8 @@ public sealed class BookingTools(
 {
     private HttpClient Gateway => httpClientFactory.CreateClient("gateway");
 
-    [Description("Search bookable listings by free-text query (e.g. a place or title). Read-only; runs immediately.")]
-    public async Task<string> SearchListings(
+    [Description("Search bookable catalogs by free-text query (e.g. a place or title). Read-only; runs immediately.")]
+    public async Task<string> SearchCatalogs(
         [Description("Free-text search terms, e.g. 'beach house in Da Nang'.")] string query,
         [Description("1-based page number. Default 1.")] int page = 1,
         [Description("Results per page. Default 20.")] int pageSize = 20)
@@ -29,12 +29,21 @@ public sealed class BookingTools(
         return resp.IsSuccessStatusCode ? body : $"Search failed ({(int)resp.StatusCode}). {body}";
     }
 
-    [Description("Get one listing by its GUID id, including price per night and availability. Read-only.")]
-    public async Task<string> GetListing(
-        [Description("The catalog/listing GUID.")] Guid catalogId)
+    [Description("Find bookable catalogs by name/title (matches the catalog directly, case-insensitive). Use this to locate a catalog and its GUID when the user names it instead of giving an id. Read-only; runs immediately.")]
+    public async Task<string> SearchCatalogsByName(
+        [Description("The catalog name, or part of it, e.g. 'Seaside Villa'.")] string name)
+    {
+        var resp = await Gateway.GetAsync($"/api/catalog/catalogs/search?name={Uri.EscapeDataString(name)}");
+        var body = await resp.Content.ReadAsStringAsync();
+        return resp.IsSuccessStatusCode ? body : $"Search failed ({(int)resp.StatusCode}). {body}";
+    }
+
+    [Description("Get one catalog by its GUID id, including price per night and availability. Read-only.")]
+    public async Task<string> GetCatalog(
+        [Description("The catalog GUID.")] Guid catalogId)
     {
         var resp = await Gateway.GetAsync($"/api/catalog/catalogs/{catalogId}");
-        if (resp.StatusCode == HttpStatusCode.NotFound) return "Listing not found.";
+        if (resp.StatusCode == HttpStatusCode.NotFound) return "Catalog not found.";
         var body = await resp.Content.ReadAsStringAsync();
         return resp.IsSuccessStatusCode ? body : $"Lookup failed ({(int)resp.StatusCode}). {body}";
     }
@@ -51,7 +60,7 @@ public sealed class BookingTools(
 
     [Description("Prepare a NEW booking for the current user. Write action: does not book immediately — it records a proposal the user must confirm first.")]
     public string CreateBooking(
-        [Description("The catalog/listing GUID to book.")] Guid catalogId,
+        [Description("The catalog GUID to book.")] Guid catalogId,
         [Description("Check-in date, ISO format yyyy-MM-dd.")] string checkIn,
         [Description("Check-out date, ISO format yyyy-MM-dd.")] string checkOut)
     {
@@ -70,7 +79,7 @@ public sealed class BookingTools(
         };
 
         var nights = co.DayNumber - ci.DayNumber;
-        var summary = $"Create booking for listing {catalogId} from {ci:yyyy-MM-dd} to {co:yyyy-MM-dd} ({nights} night(s)).";
+        var summary = $"Create booking for catalog {catalogId} from {ci:yyyy-MM-dd} to {co:yyyy-MM-dd} ({nights} night(s)).";
         logger.LogInformation("Proposing CreateBooking: {Summary}", summary);
         capture.Propose(new PendingAction("CreateBooking", summary, HttpMethod.Post, "/api/bookings", JsonSerializer.Serialize(payload)));
         return $"Prepared: {summary} Awaiting the user's confirmation before it is booked.";

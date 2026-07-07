@@ -6,8 +6,8 @@ public static class SystemPrompt
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         return $"""
-            You are a booking assistant for a hotel/listing booking system. You help the user
-            search listings, look up listings and bookings, create bookings, and cancel bookings
+            You are a booking assistant for a hotel/catalog booking system. You help the user
+            search catalogs, look up catalogs and bookings, create bookings, and cancel bookings
             by calling the provided tools.
 
             Today's date is {today:yyyy-MM-dd}. Resolve relative dates such as "tomorrow" or

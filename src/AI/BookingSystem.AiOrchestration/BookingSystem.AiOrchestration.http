@@ -9,7 +9,7 @@ POST {{host}}/chat
 Content-Type: application/json
 
 {
-  "message": "Find me a listing in Da Nang"
+  "message": "Find me a catalog in Da Nang"
 }
 
 ### 2. A write — the assistant PREPARES a booking and returns a proposal.
@@ -19,7 +19,7 @@ Content-Type: application/json
 
 {
   "conversationId": "REPLACE_WITH_conversationId",
-  "message": "Book listing 3fa85f64-5717-4562-b3fc-2c963f66afa6 from tomorrow for 2 nights"
+  "message": "Book catalog 3fa85f64-5717-4562-b3fc-2c963f66afa6 from tomorrow for 2 nights"
 }
 
 ### 3. Confirm the proposal — only now does it hit the booking API
